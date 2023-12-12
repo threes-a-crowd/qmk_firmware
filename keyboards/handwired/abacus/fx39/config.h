@@ -33,3 +33,20 @@
 #define OLED_RST_PIN GP12
 #define OLED_DISPLAY_64X128
 #define OLED_SPI_DIVISOR 32
+
+// Support floats in printf
+#define PRINTF_ALIAS_STANDARD_FUNCTION_NAMES 1 // I think this is set by default
+
+// These are defined as 0 in printf.mk, not sure how to properly overwrite that, so undef / redef here..
+#ifdef PRINTF_SUPPORT_DECIMAL_SPECIFIERS
+#undef PRINTF_SUPPORT_DECIMAL_SPECIFIERS
+#define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
+#endif
+
+#ifdef PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#undef PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS
+#define PRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS 1
+#endif
+
+// Set delay for tap/hold
+#define TAPPING_TERM 200

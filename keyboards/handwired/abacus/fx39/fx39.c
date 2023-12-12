@@ -6,9 +6,8 @@
 #define EXPRESSIONS_BUFF_SIZE 64
 int input_count = 0;
 char expressions_buffer[EXPRESSIONS_BUFF_SIZE];
-char output_result[9];
-int dp_precision = 2;
-
+char result_string[EXPRESSIONS_BUFF_SIZE];
+char display_result[21];
 
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_kb(oled_rotation_t rotation)
@@ -18,33 +17,21 @@ oled_rotation_t oled_init_kb(oled_rotation_t rotation)
 
 bool oled_task_kb(void)
 {
-//    oled_write_P(PSTR("My 1st Keyboard\n"), false) ;
-//    oled_set_cursor(0, 0) ;
     oled_write_ln((expressions_buffer), false) ;
-    oled_write_ln((output_result), false) ;
-//    led_t led_state = host_keyboard_led_state() ;
-//    oled_write_P(led_state.num_lock ? PSTR("NUM ") : PSTR("    "), false) ;
-//    oled_write_P(led_state.caps_lock ? PSTR("CAP ") : PSTR("    "), false) ;
-//    oled_write_P(led_state.scroll_lock ? PSTR("SCR ") : PSTR("    "), false) ;
+    oled_write_ln((display_result), false) ;
     
     return false ;
 }
 #endif
 
 void write_char_to_buff(char c) {
+    if (input_count == 0) {
+        display_result[0] = '\0' ; // Clear result display when we start adding characters
+    }
 	if(input_count+1 < EXPRESSIONS_BUFF_SIZE) {
 		expressions_buffer[input_count] = c ;
 		expressions_buffer[input_count+1] = '\0';
 		input_count++;
-        output_result[0] = ' ';
-        output_result[1] = ' ';
-        output_result[2] = ' ';
-        output_result[3] = ' ';
-        output_result[4] = ' ';
-        output_result[5] = ' ';
-        output_result[6] = ' ';
-        output_result[7] = ' ';
-        output_result[8] = '\0';
 	}
 }
 
@@ -125,13 +112,15 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 				write_char_to_buff('/');
 			}
 			return false ; // End processing here
-		case CK_ENT:
+		//case CK_ENT:
+		case LT(0,KC_NO):
 			if (record->event.pressed) {
 				double result = te_interp(expressions_buffer, 0);
-				//char output_string[EXPRESSIONS_BUFF_SIZE];
-				//dtostrf(result, 1, dp_precision, output_string);
-				sprintf(output_result, "%d",(int)result);
-				//send_string(output_string);
+                sprintf(display_result, "%20g", result); // 'Right justify on display, more like a 'normal' calculator
+				if (!record->tap.count) { // If button held, send result to host
+                    sprintf(result_string, "%g", result) ; // Different string to avoid leading spaces
+                    send_string(result_string);
+                }
 				input_count = 0 ;
 			}
 			return false; 
