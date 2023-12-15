@@ -35,6 +35,12 @@ enum my_keycodes
     CK_SIN,
     CK_COS,
     CK_TAN,
+    CK_ASIN,
+    CK_ACOS,
+    CK_ATAN,
+    CK_SINH,
+    CK_COSH,
+    CK_TANH,
     CK_BRK_OPEN,
     CK_BRK_CLOSE,
     CK_M,
@@ -46,8 +52,8 @@ enum my_keycodes
     CK_SIGN,
     CK_LOG,
     CK_LN,
-    CK_HYP,
     CK_POW,
-    CK_SQRT,
-    CK_INV
+    CK_SQ,
+    CK_INV,
+    CK_SQRT
 };
