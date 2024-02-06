@@ -35,6 +35,11 @@ For log = base 10 log do nothing
 For log = natural log uncomment the next line. */
 /* #define TE_NAT_LOG */
 
+/* Angle conversions
+ * For standard C functionality do nothing.
+ * To support trig functions in deg/grad as well as rad, plus conversion
+ * between unit types; uncomment the next line. */
+/* #define TE_SUPPORT_ANGLE_CONVERSION */
 #include "tinyexpr.h"
 #include <stdlib.h>
 #include <math.h>
@@ -51,6 +56,82 @@ For log = natural log uncomment the next line. */
 #define INFINITY (1.0/0.0)
 #endif
 
+// Moving these here, since they're basically #defs
+static double pi(void) {return 3.14159265358979323846;}
+static double e(void) {return 2.71828182845904523536;}
+
+#ifdef TE_SUPPORT_ANGLE_CONVERSION
+static Te_Angle_Type global_angle_units = TE_RADIANS ;
+
+void te_set_angle_units(Te_Angle_Type units) {
+    global_angle_units = units;
+}
+
+#define rad2deg(X) ((X) * 180.0 / pi()) 
+#define deg2rad(X) ((X) * pi() / 180.0)
+#define rad2grad(X) ((X) * 200.0 / pi()) 
+#define grad2rad(X) ((X) * pi() / 200.0)
+
+double te_trig(double (*trig_func)(double), double x) {
+    switch (global_angle_units) {
+        case TE_DEGREES:
+            return trig_func(deg2rad(x));
+        case TE_RADIANS:
+            return trig_func(x);
+        case TE_GRADIANS:
+            return trig_func(grad2rad(x));
+        default:
+            return 0.0 ;
+    }        
+} 
+
+double te_atrig(double (*trig_func)(double), double x) {
+    switch (global_angle_units) {
+        case TE_DEGREES:
+            return rad2deg(trig_func(x));
+        case TE_RADIANS:
+            return trig_func(x);
+        case TE_GRADIANS:
+            return rad2grad(trig_func(x));
+        default:
+            return 0.0 ;
+    }        
+} 
+
+#define _TE_TRIG_FUNC(FUNC) double te_##FUNC(double x, Te_Angle_Type angle_type) {return te_trig(FUNC, x);}
+#define _TE_ATRIG_FUNC(FUNC) double te_##FUNC(double x, Te_Angle_Type angle_type) {return te_atrig(FUNC, x);}
+
+_TE_TRIG_FUNC(sin)
+_TE_TRIG_FUNC(cos)
+_TE_TRIG_FUNC(tan)
+_TE_TRIG_FUNC(sinh)
+_TE_TRIG_FUNC(cosh)
+_TE_TRIG_FUNC(tanh)
+
+_TE_ATRIG_FUNC(asin)
+_TE_ATRIG_FUNC(acos)
+_TE_ATRIG_FUNC(atan)
+_TE_ATRIG_FUNC(asinh)
+_TE_ATRIG_FUNC(acosh)
+_TE_ATRIG_FUNC(atanh)
+
+#else
+
+#define te_sin sin
+#define te_cos cos
+#define te_tan tan
+#define te_asin asin
+#define te_acos acos
+#define te_atan atan
+
+#define te_sinh sinh
+#define te_cosh cosh
+#define te_tanh tanh
+#define te_asinh asinh
+#define te_acosh acosh
+#define te_atanh atanh
+
+#endif
 
 typedef double (*te_fun2)(double, double);
 
@@ -122,8 +203,6 @@ void te_free(te_expr *n) {
 }
 
 
-static double pi(void) {return 3.14159265358979323846;}
-static double e(void) {return 2.71828182845904523536;}
 static double fac(double a) {/* simplest version of fac */
     if (a < 0.0)
         return NAN;
@@ -162,13 +241,13 @@ static double npr(double n, double r) {return ncr(n, r) * fac(r);}
 static const te_variable functions[] = {
     /* must be in alphabetical order */
     {"abs", fabs,     TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"acos", acos,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"asin", asin,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"atan", atan,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"acos", te_acos, TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"asin", te_asin, TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"atan", te_atan, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"atan2", atan2,  TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"ceil", ceil,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"cos", cos,      TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"cosh", cosh,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"cos", te_cos,   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"cosh", te_cosh, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"e", e,          TE_FUNCTION0 | TE_FLAG_PURE, 0},
     {"exp", exp,      TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"fac", fac,      TE_FUNCTION1 | TE_FLAG_PURE, 0},
@@ -184,11 +263,11 @@ static const te_variable functions[] = {
     {"npr", npr,      TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"pi", pi,        TE_FUNCTION0 | TE_FLAG_PURE, 0},
     {"pow", pow,      TE_FUNCTION2 | TE_FLAG_PURE, 0},
-    {"sin", sin,      TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"sinh", sinh,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"sin", te_sin,   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"sinh", te_sinh, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"sqrt", sqrt,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"tan", tan,      TE_FUNCTION1 | TE_FLAG_PURE, 0},
-    {"tanh", tanh,    TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"tan", te_tan,   TE_FUNCTION1 | TE_FLAG_PURE, 0},
+    {"tanh", te_tanh, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {0, 0, 0, 0}
 };
 

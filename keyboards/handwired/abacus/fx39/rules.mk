@@ -4,3 +4,5 @@ OLED_ENABLE = yes
 OLED_DRIVER = ssd1306
 OLED_TRANSPORT = spi 
 SRC += tinyexpr.c
+
+#DIP_SWITCH_ENABLE = yes

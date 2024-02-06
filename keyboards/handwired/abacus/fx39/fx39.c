@@ -14,6 +14,9 @@ double result = 0 ;
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_kb(oled_rotation_t rotation)
 {
+#ifdef TE_SUPPORT_ANGLE_CONVERSION
+    te_set_angle_units(TE_DEGREES) ; // TODO: THIS NEEDS TO MOVE ELSEWHERE, JUST HERE FOR TESTING!_
+#endif
     return OLED_ROTATION_90 ;
 }
 
@@ -25,6 +28,16 @@ bool oled_task_kb(void)
     return false ;
 }
 #endif
+
+/*
+bool dip_switch_update_mask_kb(unit32_t state) {
+    if (!dip_switch_update_mask_user(state)) {return false;}
+    
+    if (state & (1UL<<0) && state & (1UL<<1)) {
+        //do stuff
+    }
+    return true ;
+}*/
 
 void write_char_to_buff(char c) {
     if (input_count == 0) {
@@ -198,7 +211,15 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             case CK_LN:
                 write_str_to_buff("ln(",3);
                 break ;
-                // TODO: Some of these are easier than others....
+#ifdef TE_SUPPORT_ANGLE_CONVERSION
+            case CK_DEG:
+                te_set_angle_units(TE_DEGREES) ;
+                break ;
+            case CK_RAD:
+                te_set_angle_units(TE_RADIANS) ;
+                break ;
+#endif
+            // TODO: Some of these are easier than others....
             case CK_SIGN:
             case CK_M:
             case CK_MR:

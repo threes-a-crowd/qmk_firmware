@@ -59,8 +59,6 @@ typedef struct te_variable {
     void *context;
 } te_variable;
 
-
-
 /* Parses the input expression, evaluates it, and frees it. */
 /* Returns NaN on error. */
 double te_interp(const char *expression, int *error);
@@ -79,6 +77,15 @@ void te_print(const te_expr *n);
 /* This is safe to call on NULL pointers. */
 void te_free(te_expr *n);
 
+#ifdef TE_SUPPORT_ANGLE_CONVERSION
+typedef enum {
+    TE_DEGREES, TE_RADIANS, TE_GRADIANS
+} Te_Angle_Type ;
+
+void te_set_angle_units(Te_Angle_Type units);
+
+double te_trig(double (*trig_func)(double), double x);
+#endif
 
 #ifdef __cplusplus
 }

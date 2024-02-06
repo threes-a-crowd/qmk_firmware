@@ -55,5 +55,7 @@ enum my_keycodes
     CK_POW,
     CK_SQ,
     CK_INV,
-    CK_SQRT
+    CK_SQRT,
+    CK_DEG,
+    CK_RAD
 };

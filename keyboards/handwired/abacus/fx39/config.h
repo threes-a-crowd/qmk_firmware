@@ -50,3 +50,7 @@
 
 // Set delay for tap/hold
 #define TAPPING_TERM 200
+
+#define TE_SUPPORT_ANGLE_CONVERSION
+
+//#define DIP_SWITCH_PINS { GPx, GPy, GPz }
