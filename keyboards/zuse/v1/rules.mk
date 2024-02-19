@@ -1,3 +1,5 @@
 BOARD = GENERIC_RP_RP2040
 SPLIT_KEYBOARD = yes
 SERIAL_DRIVER = vendor
+#SRC += tinyexpr.c
+#DIP_SWITCH_ENABLE = yes
