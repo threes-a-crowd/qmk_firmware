@@ -1,0 +1,13 @@
+# Plan to implement new display type....
+
+-1. Copy ssd1351 to ssd1322 (since this has most similar op codes)
+-1a. Rename all functions, update opcodes, update init sequence
+-2. Update quantum/painter/* to also reference ssd1322
+-3. Create a new 4bpp surface type, along with update/palette conversion functions....
+-4. Repeat in the TFT files (looks like we only actually NEED this one???)
+4a. TEST IT WITH A DISPLAY..!
+4b. Works for all on, but not pixels.... - NEED TO CREATE A CUSTOM viewport function as this multiple pixels per address, rather than the other way around..
+5. Work out how the buffer region / offsets are handled (looks like a lot of that is TBD...)
+6. Implement a true grayscale version; currently only using 1bpp and just duplicating it to be 4bits;
+   It looks like 'mono' is already an 8-bit value, so should just be able to use it, I *think* by 
+   re-scaling the 'V' part, but need to actually work out how HSV colour format works....

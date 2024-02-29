@@ -33,7 +33,7 @@ bool qgf_parse_format(qp_image_format_t format, uint8_t *bpp, bool *has_palette,
     } formats[] = {
         [GRAYSCALE_1BPP] = {.bpp = 1, .has_palette = false, .is_panel_native = false},
         [GRAYSCALE_2BPP] = {.bpp = 2, .has_palette = false, .is_panel_native = false},
-        [GRAYSCALE_4BPP] = {.bpp = 4, .has_palette = false, .is_panel_native = false},
+        [GRAYSCALE_4BPP] = {.bpp = 4, .has_palette = false, .is_panel_native = true},
         [GRAYSCALE_8BPP] = {.bpp = 8, .has_palette = false, .is_panel_native = false},
         [PALETTE_1BPP] = {.bpp = 1, .has_palette = true, .is_panel_native = false},
         [PALETTE_2BPP] = {.bpp = 2, .has_palette = true, .is_panel_native = false},

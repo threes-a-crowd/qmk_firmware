@@ -56,6 +56,7 @@ build/
 cmake-build-debug
 CMakeLists.txt
 *.pdf
+cscope.out
 
 # Let these ones be user specific, since we have so many different configurations
 *.code-workspace

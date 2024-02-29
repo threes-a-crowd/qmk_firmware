@@ -1,6 +1,7 @@
 // Copyright 2024 Ian Morris (@threes-a-crowd)
 // Based on mono4bpp, Copyright 2022 Nick Brassel (@tzarc)
 // SPDX-License-Identifier: GPL-2.0-or-later
+// TODO: Update this to be grayscale; currently all four bits are on or off
 
 #ifdef QUANTUM_PAINTER_SURFACE_ENABLE
 

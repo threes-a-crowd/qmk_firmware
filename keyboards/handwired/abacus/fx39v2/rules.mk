@@ -1,8 +1,8 @@
 BOARD = GENERIC_RP_RP2040
-SPLIT_KEYBOARD = yes
 SERIAL_DRIVER = vendor
 #SRC += tinyexpr.c
 #DIP_SWITCH_ENABLE = yes
 QUANTUM_PAINTER_ENABLE = yes
 QUANTUM_PAINTER_DRIVERS += ssd1322_spi
 SRC += noto_sans_12.qff.c
+SRC += tinyexpr.c

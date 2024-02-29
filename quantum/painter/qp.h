@@ -491,6 +491,12 @@ int16_t qp_drawtext_recolor(painter_device_t device, uint16_t x, uint16_t y, pai
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Quantum Painter Drivers
 
+#ifdef QUANTUM_PAINTER_MONO4BPP_SURFACE_ENABLE
+#    include "qp_mono4bpp_surface.h"
+#else // QUANTUM_PAINTER_MONO4BPP_SURFACE_ENABLE
+#    define MONO4BPP_SURFACE_NUM_DEVICES 0
+#endif // QUANTUM_PAINTER_MONO4BPP_SURFACE_ENABLE
+
 #ifdef QUANTUM_PAINTER_RGB565_SURFACE_ENABLE
 #    include "qp_rgb565_surface.h"
 #else // QUANTUM_PAINTER_RGB565_SURFACE_ENABLE
@@ -532,6 +538,12 @@ int16_t qp_drawtext_recolor(painter_device_t device, uint16_t x, uint16_t y, pai
 #else // QUANTUM_PAINTER_GC9A01_ENABLE
 #    define GC9A01_NUM_DEVICES 0
 #endif // QUANTUM_PAINTER_GC9A01_ENABLE
+
+#ifdef QUANTUM_PAINTER_SSD1322_ENABLE
+#    include "qp_ssd1322.h"
+#else // QUANTUM_PAINTER_SSD1322_ENABLE
+#    define SSD1322_NUM_DEVICES 0
+#endif // QUANTUM_PAINTER_SSD1322_ENABLE
 
 #ifdef QUANTUM_PAINTER_SSD1351_ENABLE
 #    include "qp_ssd1351.h"

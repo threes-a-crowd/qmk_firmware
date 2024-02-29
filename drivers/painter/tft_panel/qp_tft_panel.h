@@ -55,9 +55,11 @@ bool qp_tft_panel_flush(painter_device_t device);
 bool qp_tft_panel_viewport(painter_device_t device, uint16_t left, uint16_t top, uint16_t right, uint16_t bottom);
 bool qp_tft_panel_pixdata(painter_device_t device, const void *pixel_data, uint32_t native_pixel_count);
 
+bool qp_tft_panel_palette_convert_mono4bpp(painter_device_t device, int16_t palette_size, qp_pixel_t *palette);
 bool qp_tft_panel_palette_convert_rgb565_swapped(painter_device_t device, int16_t palette_size, qp_pixel_t *palette);
 bool qp_tft_panel_palette_convert_rgb888(painter_device_t device, int16_t palette_size, qp_pixel_t *palette);
 
+bool qp_tft_panel_append_pixels_mono4bpp(painter_device_t device, uint8_t *target_buffer, qp_pixel_t *palette, uint32_t pixel_offset, uint32_t pixel_count, uint8_t *palette_indices);
 bool qp_tft_panel_append_pixels_rgb565(painter_device_t device, uint8_t *target_buffer, qp_pixel_t *palette, uint32_t pixel_offset, uint32_t pixel_count, uint8_t *palette_indices);
 bool qp_tft_panel_append_pixels_rgb888(painter_device_t device, uint8_t *target_buffer, qp_pixel_t *palette, uint32_t pixel_offset, uint32_t pixel_count, uint8_t *palette_indices);
 

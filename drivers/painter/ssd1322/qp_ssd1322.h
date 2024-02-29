@@ -34,4 +34,7 @@
  * @return the device handle used with all drawing routines in Quantum Painter
  */
 painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel_height, pin_t chip_select_pin, pin_t dc_pin, pin_t reset_pin, uint16_t spi_divisor, int spi_mode);
+
+// Need a custom viewport function as we don't fit in the multiple bytes per pixel, this is multiple pixels per byte
+bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, uint16_t right, uint16_t bottom);
 #endif // QUANTUM_PAINTER_SSD1322_SPI_ENABLE

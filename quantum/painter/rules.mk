@@ -13,6 +13,7 @@ VALID_QUANTUM_PAINTER_DRIVERS := \
     st7735_spi \
     st7789_spi \
     gc9a01_spi \
+    ssd1322_spi \
     ssd1351_spi \
     sh1106_i2c \
     sh1106_spi
@@ -124,6 +125,17 @@ define handle_quantum_painter_driver
             $(DRIVER_PATH)/painter/tft_panel/qp_tft_panel.c \
             $(DRIVER_PATH)/painter/gc9a01/qp_gc9a01.c
 
+    else ifeq ($$(strip $$(CURRENT_PAINTER_DRIVER)),ssd1322_spi)
+        QUANTUM_PAINTER_NEEDS_COMMS_SPI := yes
+        QUANTUM_PAINTER_NEEDS_COMMS_SPI_DC_RESET := yes
+        OPT_DEFS += -DQUANTUM_PAINTER_SSD1322_ENABLE -DQUANTUM_PAINTER_SSD1322_SPI_ENABLE
+        COMMON_VPATH += \
+            $(DRIVER_PATH)/painter/tft_panel \
+            $(DRIVER_PATH)/painter/ssd1322
+        SRC += \
+            $(DRIVER_PATH)/painter/tft_panel/qp_tft_panel.c \
+            $(DRIVER_PATH)/painter/ssd1322/qp_ssd1322.c
+
     else ifeq ($$(strip $$(CURRENT_PAINTER_DRIVER)),ssd1351_spi)
         QUANTUM_PAINTER_NEEDS_COMMS_SPI := yes
         QUANTUM_PAINTER_NEEDS_COMMS_SPI_DC_RESET := yes
@@ -173,6 +185,7 @@ ifeq ($(strip $(QUANTUM_PAINTER_NEEDS_SURFACE)), yes)
     SRC += \
         $(DRIVER_PATH)/painter/generic/qp_surface_common.c \
         $(DRIVER_PATH)/painter/generic/qp_surface_mono1bpp.c \
+        $(DRIVER_PATH)/painter/generic/qp_surface_mono4bpp.c \
         $(DRIVER_PATH)/painter/generic/qp_surface_rgb565.c
 endif
 

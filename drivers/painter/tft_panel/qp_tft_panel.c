@@ -1,5 +1,7 @@
 // Copyright 2021 Nick Brassel (@tzarc)
+// Updated 2024 Ian Morris (@threes-a-crowd) to include mono4bpp
 // SPDX-License-Identifier: GPL-2.0-or-later
+// TODO: Convert mono4bpp to actually be grayscale; currently all ON or OFF for basic testing
 
 #include "color.h"
 #include "qp_internal.h"
@@ -81,12 +83,20 @@ bool qp_tft_panel_viewport(painter_device_t device, uint16_t left, uint16_t top,
 // Stream pixel data to the current write position in GRAM
 bool qp_tft_panel_pixdata(painter_device_t device, const void *pixel_data, uint32_t native_pixel_count) {
     painter_driver_t *driver = (painter_driver_t *)device;
-    qp_comms_send(device, pixel_data, native_pixel_count * driver->native_bits_per_pixel / 8);
+    qp_comms_send(device, pixel_data, (native_pixel_count * driver->native_bits_per_pixel) / 8);
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Convert supplied palette entries into their native equivalents
+
+//TODO: Need to convert to grayscale (mono is already 8 bit, so should be relatively straight-forward)
+bool qp_tft_panel_palette_convert_mono4bpp(painter_device_t device, int16_t palette_size, qp_pixel_t *palette) {
+    for (int16_t i = 0; i < palette_size; ++i) {
+        palette[i].mono = (palette[i].hsv888.v > 127) ? 1 : 0;
+    }
+    return true;
+}
 
 bool qp_tft_panel_palette_convert_rgb565_swapped(painter_device_t device, int16_t palette_size, qp_pixel_t *palette) {
     for (int16_t i = 0; i < palette_size; ++i) {
@@ -109,6 +119,21 @@ bool qp_tft_panel_palette_convert_rgb888(painter_device_t device, int16_t palett
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Append pixels to the target location, keyed by the pixel index
+
+//TODO: Need to convert to grayscale (mono is already 8 bit, so should be relatively straight-forward)
+bool qp_tft_panel_append_pixels_mono4bpp(painter_device_t device, uint8_t *target_buffer, qp_pixel_t *palette, uint32_t pixel_offset, uint32_t pixel_count, uint8_t *palette_indices) {
+    for (uint32_t i = 0; i < pixel_count; ++i) {
+        uint32_t pixel_num   = pixel_offset + i;
+        uint32_t byte_offset = pixel_num / 2;
+        uint8_t  bit_offset  = 4*(pixel_num % 2);
+        if (palette[palette_indices[i]].mono) {
+            target_buffer[byte_offset] |= (0xF << bit_offset);
+        } else {
+            target_buffer[byte_offset] &= ~(0xF << bit_offset);
+        }
+    }
+    return true;
+}
 
 bool qp_tft_panel_append_pixels_rgb565(painter_device_t device, uint8_t *target_buffer, qp_pixel_t *palette, uint32_t pixel_offset, uint32_t pixel_count, uint8_t *palette_indices) {
     uint16_t *buf = (uint16_t *)target_buffer;
