@@ -122,14 +122,18 @@ bool qp_tft_panel_palette_convert_rgb888(painter_device_t device, int16_t palett
 
 //TODO: Need to convert to grayscale (mono is already 8 bit, so should be relatively straight-forward)
 bool qp_tft_panel_append_pixels_mono4bpp(painter_device_t device, uint8_t *target_buffer, qp_pixel_t *palette, uint32_t pixel_offset, uint32_t pixel_count, uint8_t *palette_indices) {
+    uint16_t *buf = (uint16_t *)target_buffer;
     for (uint32_t i = 0; i < pixel_count; ++i) {
         uint32_t pixel_num   = pixel_offset + i;
-        uint32_t byte_offset = pixel_num / 2;
-        uint8_t  bit_offset  = 4*(pixel_num % 2);
+//        uint32_t byte_offset = pixel_num / 2;
+        uint32_t word_offset = pixel_num >> 2;
+        uint8_t  bit_offset  = 4*(3-(pixel_num % 4));
         if (palette[palette_indices[i]].mono) {
-            target_buffer[byte_offset] |= (0xF << bit_offset);
+//            target_buffer[byte_offset] |= (0xF << bit_offset);
+            buf[word_offset] |= (0xF << bit_offset);
         } else {
-            target_buffer[byte_offset] &= ~(0xF << bit_offset);
+//            target_buffer[byte_offset] &= ~(0xF << bit_offset);
+            buf[word_offset] &= ~(0xF << bit_offset);
         }
     }
     return true;

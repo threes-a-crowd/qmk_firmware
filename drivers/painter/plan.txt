@@ -5,9 +5,21 @@
 -2. Update quantum/painter/* to also reference ssd1322
 -3. Create a new 4bpp surface type, along with update/palette conversion functions....
 -4. Repeat in the TFT files (looks like we only actually NEED this one???)
-4a. TEST IT WITH A DISPLAY..!
-4b. Works for all on, but not pixels.... - NEED TO CREATE A CUSTOM viewport function as this multiple pixels per address, rather than the other way around..
-5. Work out how the buffer region / offsets are handled (looks like a lot of that is TBD...)
+-4a. TEST IT WITH A DISPLAY..!
+-4b. Works for all on, but not pixels.... - NEED TO CREATE A CUSTOM viewport function as this multiple pixels per address, rather than the other way around..
+-4c. CAN now write to specific screen locations, but only hard-coded direct writes.... need to re-test with real functions
+
+** I SUSPECT THERE ARE ISSUES WITH 90/270 ROTATION, SINCE WE WRITE MULTIPLE PIXELS AT A TIME, SO NOT SURE HOW TO SPLIT ACROSS BYTES - just ignore? **
+
+** SINCE WE WRITE FOUR PIXELS PER ADDRESS, WE PROBABLY NEED TO EXPAND WHAT WE WRITE TO STICK TO A BOUNDARY **
+** WHERE IS THE DATA KEPT, AS WE MAY ALSO NEED TO KNOW WHAT OTHER UNCHANGED PIXELS ARE / WERE.... **
+
+This isn't going to work using a modified TFT setup; need a hybrid of TFT and OLED, so we can update an internal buffer and flush it to the screen.
+- With 4bpp, but a 16-bit viewport step, we can't copy a consistent amount of data, it varies depending on dimensions; e.g. a horizontal line is 1-by-x pixels, and takes x/2 bytes to write; a vertical line is 1-by-y pixels, but takes 2*y pixels to write.
+
+
+
+5. Work out how the buffer region / offsets are handled (looks like a lot of that is TBD... in OLED, but seems to work in TFT)
 6. Implement a true grayscale version; currently only using 1bpp and just duplicating it to be 4bits;
    It looks like 'mono' is already an 8-bit value, so should just be able to use it, I *think* by 
    re-scaling the 'V' part, but need to actually work out how HSV colour format works....

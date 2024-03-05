@@ -20,24 +20,44 @@ void keyboard_post_init_kb(void) {
     te_set_angle_units(TE_DEGREES) ; // TODO: THIS NEEDS TO MOVE ELSEWHERE, JUST HERE FOR TESTING!_
 #endif
     display = qp_ssd1322_make_spi_device(480, 128, OLED_CS_PIN, OLED_DC_PIN, OLED_RST_PIN, OLED_SPI_DIVISOR, 0);
+//    display = qp_ssd1322_make_spi_device(256, 64, OLED_CS_PIN, OLED_DC_PIN, OLED_RST_PIN, OLED_SPI_DIVISOR, 0);
 
     qp_init(display, QP_ROTATION_0);
+    qp_set_viewport_offsets(display, 96, 0) ;
     default_font = qp_load_font_mem(font_noto_sans_12);
     
     //qp_power(display, true) ;
-/*
-    if (default_font != NULL) {
-        static const char *text = "Hello World!";
-        //int16_t width = qp_textwidth(default_font, text) ;
-        qp_drawtext(display, 0, 0, default_font, text);
-//        qp_drawtext(display, 0, 55, default_font, text);
+
+/*    if (default_font != NULL) {
+        static const char *text = "Hello World from QMK";
+//        int16_t width = qp_textwidth(default_font, text) ;
+//        qp_drawtext(display, 0, 0, default_font, text);
+        qp_drawtext(display, 0, 32, default_font, text);
 //        qp_drawtext(display, 0, 127-default_font->line_height, default_font, text);
     }
 */
+
+    //qp_rect(display, 0, 0, 255, 63, 0, 255, 255, true) ;
+
+
+//    qp_line(display, 0, 0, 0, 0, 0, 255, 255) ;
+//    qp_line(display, 0, 1, 1, 1, 0, 255, 255) ;
+//    qp_line(display, 0, 2, 2, 2, 0, 255, 255) ;
+//    qp_line(display, 0, 3, 3, 3, 0, 255, 255) ;
+//    qp_line(display, 0, 4, 4, 4, 0, 255, 255) ;
+//    qp_line(display, 0, 5, 5, 5, 0, 255, 255) ;
+//    qp_line(display, 0, 6, 6, 6, 0, 255, 255) ;
+//    qp_line(display, 0, 7, 7, 7, 0, 255, 255) ;
+//    qp_line(display, 0, 8, 3, 8, 0, 255, 255) ;
+//    qp_line(display, 1, 9, 4, 9, 0, 255, 255) ;
+//    qp_line(display, 2, 10, 5, 10, 0, 255, 255) ;
+//    qp_line(display, 3, 11, 6, 11, 0, 255, 255) ;
+    qp_line(display, 0, 0, 0, 62, 0, 255, 255) ;
+
 /*    uint16_t x,y;
-    for (x=0; x<480; x++)
+    for (x=0; x<256; x++)
     {
-        for (y=0; y<128;y++)
+        for (y=0; y<64;y++)
         {
             qp_setpixel(display, x, y, 0, 255, 255) ;          
         }

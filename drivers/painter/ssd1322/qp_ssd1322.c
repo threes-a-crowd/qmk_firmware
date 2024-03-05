@@ -7,6 +7,8 @@
 #include "qp_ssd1322.h"
 #include "qp_ssd1322_opcodes.h"
 #include "qp_tft_panel.h"
+//#include "qp_surface.h"
+//#include "qp_surface_internal.h"
 
 #ifdef QUANTUM_PAINTER_SSD1322_SPI_ENABLE
 #    include "qp_comms_spi.h"
@@ -16,8 +18,16 @@
 // Common
 
 // Driver storage
+/*typedef struct ssd1322_device_t {
+    tft_panel_dc_reset_painter_device_t tft;
+
+    uint8_t framebuffer[SURFACE_REQUIRED_BUFFER_BYTE_SIZE(480,128,4)];
+} ssd1322_device_t;
+*/
+
 tft_panel_dc_reset_painter_device_t ssd1322_drivers[SSD1322_NUM_DEVICES] = {0};
 
+// TODO: REMOVE THIS
 static uint8_t temp_buf[8192];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialization
@@ -25,6 +35,7 @@ static uint8_t temp_buf[8192];
 __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rotation_t rotation) {
     tft_panel_dc_reset_painter_device_t *driver = (tft_panel_dc_reset_painter_device_t *)device;
 
+//TODO: CORRECTLY WORK OUT WHAT ORIENTATIONS WE'RE IN
     // Configure the rotation (i.e. the ordering and direction of memory writes in GRAM)
     const uint8_t madctl[] = {
         [QP_ROTATION_0]   = SSD1322_MADCTL_MY | SSD1322_MADCTL_MX,
@@ -57,6 +68,8 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
 
     qp_comms_command_databyte(device, SSD1322_STARTLINE, (rotation == QP_ROTATION_0 || rotation == QP_ROTATION_90) ? driver->base.panel_height : 0);
 
+// KEEP THIS FOR NOW TO BLANK THE DISPLAY AS THERE DOESN'T SEEM TO BE A CLEAR ALL PIXELS FEATURE...
+//    uint8_t temp_buf[8192] ;
     uint8_t xbuf[2] = {24, 87};
     uint8_t ybuf[2] = {0, 63};
     qp_comms_command_databuf(device, SSD1322_SETROW, ybuf, sizeof(ybuf)) ;
@@ -65,9 +78,9 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
 
     memset(temp_buf, 0, sizeof(temp_buf));
 //    memset(temp_buf, 0xFF, sizeof(temp_buf));
-    memset(&temp_buf[0], 0x0F, 1) ;
-    memset(&temp_buf[127], 0xFF, 2) ;
-    memset(&temp_buf[8191], 0xFF, 1) ;
+//    memset(&temp_buf[0], 0x0F, 1) ;
+//    memset(&temp_buf[127], 0xFF, 2) ;
+//    memset(&temp_buf[8191], 0xFF, 1) ;
     qp_comms_send(device, temp_buf, sizeof(temp_buf)); 
 
     return true;
@@ -84,12 +97,12 @@ const tft_panel_dc_reset_painter_driver_vtable_t ssd1322_driver_vtable = {
             .clear           = qp_tft_panel_clear,
             .flush           = qp_tft_panel_flush,
             .pixdata         = qp_tft_panel_pixdata,
-            .viewport        = qp_ssd1322_viewport,
+            .viewport        = qp_ssd1322_viewport, // Need our own version of this to cope with 2 pixels per byte
             .palette_convert = qp_tft_panel_palette_convert_mono4bpp,
             .append_pixels   = qp_tft_panel_append_pixels_mono4bpp,
             .append_pixdata  = qp_tft_panel_append_pixdata,
         },
-    .num_window_bytes   = 1,
+    .num_window_bytes   = 1, // This doesn't work here, as <1 byte per pixel; using custom viewport
     .swap_window_coords = true,
     .opcodes =
         {
@@ -167,10 +180,10 @@ bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, u
 
     // Need to work out which addresses we actually need for the given pixels
     uint8_t start_x, end_x, start_y, end_y ;
-    start_x = left/4 ;
-    end_x = right/4 ;
-    start_y = top/4 ;
-    end_y = bottom/4 ;
+    start_x = left >> 2 ;
+    end_x = right >> 2 ;
+    start_y = top ; // Only actually the width that's multiples....
+    end_y = bottom ;
 
     if (/*vtable->num_window_bytes == */1) {
         // Set up the x-window
