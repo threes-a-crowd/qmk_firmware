@@ -37,4 +37,14 @@ painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel
 
 // Need a custom viewport function as we don't fit in the multiple bytes per pixel, this is multiple pixels per byte
 bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, uint16_t right, uint16_t bottom);
+
+// Need a custom flush function for handling the data conversion
+bool qp_ssd1322_flush(painter_device_t device);
+/*
+// Helpers for flushing data from the dirty region to the correct location on the OLED
+void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+void qp_ssd1322_flush_rot90(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+void qp_ssd1322_flush_rot180(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+void qp_ssd1322_flush_rot270(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+*/
 #endif // QUANTUM_PAINTER_SSD1322_SPI_ENABLE

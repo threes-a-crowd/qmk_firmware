@@ -126,14 +126,15 @@ define handle_quantum_painter_driver
             $(DRIVER_PATH)/painter/gc9a01/qp_gc9a01.c
 
     else ifeq ($$(strip $$(CURRENT_PAINTER_DRIVER)),ssd1322_spi)
+        QUANTUM_PAINTER_NEEDS_SURFACE := yes
         QUANTUM_PAINTER_NEEDS_COMMS_SPI := yes
         QUANTUM_PAINTER_NEEDS_COMMS_SPI_DC_RESET := yes
         OPT_DEFS += -DQUANTUM_PAINTER_SSD1322_ENABLE -DQUANTUM_PAINTER_SSD1322_SPI_ENABLE
         COMMON_VPATH += \
-            $(DRIVER_PATH)/painter/tft_panel \
+            $(DRIVER_PATH)/painter/oled_panel \
             $(DRIVER_PATH)/painter/ssd1322
         SRC += \
-            $(DRIVER_PATH)/painter/tft_panel/qp_tft_panel.c \
+            $(DRIVER_PATH)/painter/oled_panel/qp_oled_panel.c \
             $(DRIVER_PATH)/painter/ssd1322/qp_ssd1322.c
 
     else ifeq ($$(strip $$(CURRENT_PAINTER_DRIVER)),ssd1351_spi)

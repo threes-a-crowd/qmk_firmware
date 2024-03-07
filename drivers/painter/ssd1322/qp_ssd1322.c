@@ -6,26 +6,32 @@
 #include "qp_comms.h"
 #include "qp_ssd1322.h"
 #include "qp_ssd1322_opcodes.h"
-#include "qp_tft_panel.h"
-//#include "qp_surface.h"
-//#include "qp_surface_internal.h"
+#include "qp_oled_panel.h"
+#include "qp_surface.h"
+#include "qp_surface_internal.h"
 
 #ifdef QUANTUM_PAINTER_SSD1322_SPI_ENABLE
 #    include "qp_comms_spi.h"
 #endif // QUANTUM_PAINTER_SSD1322_SPI_ENABLE
 
+// Helpers for flushing data from the dirty region to the correct location on the OLED
+void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+void qp_ssd1322_flush_rot90(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+void qp_ssd1322_flush_rot180(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+void qp_ssd1322_flush_rot270(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Common
 
 // Driver storage
-/*typedef struct ssd1322_device_t {
-    tft_panel_dc_reset_painter_device_t tft;
+typedef struct ssd1322_device_t {
+    oled_panel_painter_device_t oled;
 
-    uint8_t framebuffer[SURFACE_REQUIRED_BUFFER_BYTE_SIZE(480,128,4)];
+    uint8_t framebuffer[SURFACE_REQUIRED_BUFFER_BYTE_SIZE(480,128,1)];
 } ssd1322_device_t;
-*/
 
-tft_panel_dc_reset_painter_device_t ssd1322_drivers[SSD1322_NUM_DEVICES] = {0};
+
+ssd1322_device_t  ssd1322_drivers[SSD1322_NUM_DEVICES] = {0};
 
 // TODO: REMOVE THIS
 static uint8_t temp_buf[8192];
@@ -33,7 +39,7 @@ static uint8_t temp_buf[8192];
 // Initialization
 
 __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rotation_t rotation) {
-    tft_panel_dc_reset_painter_device_t *driver = (tft_panel_dc_reset_painter_device_t *)device;
+    ssd1322_device_t *driver = (ssd1322_device_t *)device;
 
 //TODO: CORRECTLY WORK OUT WHAT ORIENTATIONS WE'RE IN
     // Configure the rotation (i.e. the ordering and direction of memory writes in GRAM)
@@ -43,6 +49,22 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
         [QP_ROTATION_180] = SSD1322_MADCTL_MX,
         [QP_ROTATION_270] = SSD1322_MADCTL_MV,
     };
+
+    // Change the surface geometry based on the panel rotation
+    if (rotation == QP_ROTATION_90 || rotation == QP_ROTATION_270) {
+        driver->oled.surface.base.panel_width  = driver->oled.base.panel_height;
+        driver->oled.surface.base.panel_height = driver->oled.base.panel_width;
+    } else {
+        driver->oled.surface.base.panel_width  = driver->oled.base.panel_width;
+        driver->oled.surface.base.panel_height = driver->oled.base.panel_height;
+    }
+
+    // Init the internal surface
+    if (!qp_init(&driver->oled.surface.base, QP_ROTATION_0)) {
+        qp_dprintf("Failed to init internal surface in qp_ssd1322_init\n");
+        return false;
+    }
+
 
     // clang-format off
     const uint8_t ssd1322_init_sequence[] = {
@@ -66,10 +88,9 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
     // clang-format on
     qp_comms_bulk_command_sequence(device, ssd1322_init_sequence, sizeof(ssd1322_init_sequence));
 
-    qp_comms_command_databyte(device, SSD1322_STARTLINE, (rotation == QP_ROTATION_0 || rotation == QP_ROTATION_90) ? driver->base.panel_height : 0);
+    qp_comms_command_databyte(device, SSD1322_STARTLINE, (rotation == QP_ROTATION_0 || rotation == QP_ROTATION_90) ? driver->oled.base.panel_height : 0);
 
 // KEEP THIS FOR NOW TO BLANK THE DISPLAY AS THERE DOESN'T SEEM TO BE A CLEAR ALL PIXELS FEATURE...
-//    uint8_t temp_buf[8192] ;
     uint8_t xbuf[2] = {24, 87};
     uint8_t ybuf[2] = {0, 63};
     qp_comms_command_databuf(device, SSD1322_SETROW, ybuf, sizeof(ybuf)) ;
@@ -77,11 +98,38 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
     qp_comms_command(device, SSD1322_WRITERAM) ;
 
     memset(temp_buf, 0, sizeof(temp_buf));
-//    memset(temp_buf, 0xFF, sizeof(temp_buf));
-//    memset(&temp_buf[0], 0x0F, 1) ;
-//    memset(&temp_buf[127], 0xFF, 2) ;
-//    memset(&temp_buf[8191], 0xFF, 1) ;
+
     qp_comms_send(device, temp_buf, sizeof(temp_buf)); 
+
+    return true;
+}
+
+// Screen flush
+bool qp_ssd1322_flush(painter_device_t device) {
+    ssd1322_device_t *driver = (ssd1322_device_t *)device;
+
+    if (!driver->oled.surface.dirty.is_dirty) {
+        return true;
+    }
+
+    switch (driver->oled.base.rotation) {
+        default:
+        case QP_ROTATION_0:
+            qp_ssd1322_flush_rot0(device, &driver->oled.surface.dirty, driver->framebuffer);
+            break;
+        case QP_ROTATION_90:
+            qp_ssd1322_flush_rot90(device, &driver->oled.surface.dirty, driver->framebuffer);
+            break;
+        case QP_ROTATION_180:
+            qp_ssd1322_flush_rot180(device, &driver->oled.surface.dirty, driver->framebuffer);
+            break;
+        case QP_ROTATION_270:
+            qp_ssd1322_flush_rot270(device, &driver->oled.surface.dirty, driver->framebuffer);
+            break;
+    }
+
+    // Clear the dirty area
+    qp_flush(&driver->oled.surface);
 
     return true;
 }
@@ -89,28 +137,31 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Driver vtable
 
-const tft_panel_dc_reset_painter_driver_vtable_t ssd1322_driver_vtable = {
+const oled_panel_painter_driver_vtable_t ssd1322_driver_vtable = {
     .base =
         {
             .init            = qp_ssd1322_init,
-            .power           = qp_tft_panel_power,
-            .clear           = qp_tft_panel_clear,
-            .flush           = qp_tft_panel_flush,
-            .pixdata         = qp_tft_panel_pixdata,
-            .viewport        = qp_ssd1322_viewport, // Need our own version of this to cope with 2 pixels per byte
-            .palette_convert = qp_tft_panel_palette_convert_mono4bpp,
-            .append_pixels   = qp_tft_panel_append_pixels_mono4bpp,
-            .append_pixdata  = qp_tft_panel_append_pixdata,
+            .power           = qp_oled_panel_power,
+            .clear           = qp_oled_panel_clear,
+            .flush           = qp_ssd1322_flush, // Need our own version of this to cope with 2 pixels per byte
+            .pixdata         = qp_oled_panel_passthru_pixdata,
+            .viewport        = qp_oled_panel_passthru_viewport,
+            .palette_convert = qp_oled_panel_passthru_palette_convert,
+            .append_pixels   = qp_oled_panel_passthru_append_pixels,
+            .append_pixdata  = qp_oled_panel_passthru_append_pixdata,
         },
-    .num_window_bytes   = 1, // This doesn't work here, as <1 byte per pixel; using custom viewport
-    .swap_window_coords = true,
+    //.num_window_bytes   = 1, // This doesn't work here, as <1 byte per pixel; using custom viewport
+    //.swap_window_coords = true,
     .opcodes =
         {
             .display_on         = SSD1322_DISPLAYON,
             .display_off        = SSD1322_DISPLAYOFF,
-            .set_column_address = SSD1322_SETCOLUMN,
-            .set_row_address    = SSD1322_SETROW,
-            .enable_writes      = SSD1322_WRITERAM,
+            .set_page           = 0, // These don't apply to this display, it's more like a TFT in this respect
+            .set_column_lsb     = 0,
+            .set_column_msb     = 0,
+    //        .set_column_address = SSD1322_SETCOLUMN, // Don't know if we can keep these, but here for reference
+    //        .set_row_address    = SSD1322_SETROW,
+    //        .enable_writes      = SSD1322_WRITERAM,
         },
 };
 
@@ -121,30 +172,35 @@ const tft_panel_dc_reset_painter_driver_vtable_t ssd1322_driver_vtable = {
 
 // Factory function for creating a handle to the SSD1322 device
 painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel_height, pin_t chip_select_pin, pin_t dc_pin, pin_t reset_pin, uint16_t spi_divisor, int spi_mode) {
-    for (uint32_t i = 0; i < SSD1322_NUM_DEVICES; ++i) {
-        tft_panel_dc_reset_painter_device_t *driver = &ssd1322_drivers[i];
-        if (!driver->base.driver_vtable) {
-            driver->base.driver_vtable         = (const painter_driver_vtable_t *)&ssd1322_driver_vtable;
-            driver->base.comms_vtable          = (const painter_comms_vtable_t *)&spi_comms_with_dc_vtable;
-            driver->base.panel_width           = panel_width;
-            driver->base.panel_height          = panel_height;
-            driver->base.rotation              = QP_ROTATION_0;
-            driver->base.offset_x              = 0;
-            driver->base.offset_y              = 0;
-            driver->base.native_bits_per_pixel = 4; // mono4bpp
+    for (uint32_t i = 0; i < SSD1322_NUM_DEVICES; ++i) { 
+        ssd1322_device_t *driver = &ssd1322_drivers[i];
+        if (!driver->oled.base.driver_vtable) {
+            painter_device_t surface = qp_make_mono1bpp_surface_advanced(&driver->oled.surface, 1, panel_width, panel_height, driver->framebuffer);
+            if (!surface) {
+                return NULL;
+            }
+
+            driver->oled.base.driver_vtable         = (const painter_driver_vtable_t *)&ssd1322_driver_vtable;
+            driver->oled.base.comms_vtable          = (const painter_comms_vtable_t *)&spi_comms_with_dc_vtable;
+            driver->oled.base.panel_width           = panel_width;
+            driver->oled.base.panel_height          = panel_height;
+            driver->oled.base.rotation              = QP_ROTATION_0;
+            driver->oled.base.offset_x              = 0;
+            driver->oled.base.offset_y              = 0;
+            driver->oled.base.native_bits_per_pixel = 1; // mono1bpp for now;
 
             // SPI and other pin configuration
-            driver->base.comms_config                                   = &driver->spi_dc_reset_config;
-            driver->spi_dc_reset_config.spi_config.chip_select_pin      = chip_select_pin;
-            driver->spi_dc_reset_config.spi_config.divisor              = spi_divisor;
-            driver->spi_dc_reset_config.spi_config.lsb_first            = false;
-            driver->spi_dc_reset_config.spi_config.mode                 = spi_mode;
-            driver->spi_dc_reset_config.dc_pin                          = dc_pin;
-            driver->spi_dc_reset_config.reset_pin                       = reset_pin;
-            driver->spi_dc_reset_config.command_params_uses_command_pin = false;
+            driver->oled.base.comms_config                                   = &driver->oled.spi_dc_reset_config;
+            driver->oled.spi_dc_reset_config.spi_config.chip_select_pin      = chip_select_pin;
+            driver->oled.spi_dc_reset_config.spi_config.divisor              = spi_divisor;
+            driver->oled.spi_dc_reset_config.spi_config.lsb_first            = false;
+            driver->oled.spi_dc_reset_config.spi_config.mode                 = spi_mode;
+            driver->oled.spi_dc_reset_config.dc_pin                          = dc_pin;
+            driver->oled.spi_dc_reset_config.reset_pin                       = reset_pin;
+            driver->oled.spi_dc_reset_config.command_params_uses_command_pin = false;
 
             if (!qp_internal_register_device((painter_device_t)driver)) {
-                memset(driver, 0, sizeof(tft_panel_dc_reset_painter_device_t));
+                memset(driver, 0, sizeof(ssd1322_device_t));
                 return NULL;
             }
 
@@ -156,8 +212,8 @@ painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel
 
 // Viewport to draw to - Custom version, since we have multiple pixels per byte
 bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, uint16_t right, uint16_t bottom) {
-    painter_driver_t *                          driver = (painter_driver_t *)device;
-    tft_panel_dc_reset_painter_driver_vtable_t *vtable = (tft_panel_dc_reset_painter_driver_vtable_t *)driver->driver_vtable;
+/*    painter_driver_t *                          driver = (painter_driver_t *)device;
+    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
 
     // Fix up the drawing location if required
     left += driver->offset_x;
@@ -185,7 +241,7 @@ bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, u
     start_y = top ; // Only actually the width that's multiples....
     end_y = bottom ;
 
-    if (/*vtable->num_window_bytes == */1) {
+    if (1) { //(vtable->num_window_bytes == 1) {
         // Set up the x-window
         //uint8_t xbuf[2] = {left & 0xFF, right & 0xFF};
         uint8_t xbuf[2] = {start_x, end_x};
@@ -199,8 +255,147 @@ bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, u
 
     // Lock in the window
     qp_comms_command(device, vtable->opcodes.enable_writes);
+*/
     return true;
 }
 #endif // QUANTUM_PAINTER_SSD1322_SPI_ENABLE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Flush helpers
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
+    painter_driver_t *                  driver = (painter_driver_t *)device;
+    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
+
+    // TODO: account for offset_x/y in base driver
+    int min_page   = dirty->t / 8;
+    int max_page   = dirty->b / 8;
+    int min_column = dirty->l;
+    int max_column = dirty->r;
+
+    for (int page = min_page; page <= max_page; ++page) {
+        int     cols_required = max_column - min_column + 1;
+        uint8_t column_data[cols_required];
+        memset(column_data, 0, cols_required);
+        for (int x = min_column; x <= max_column; ++x) {
+            uint16_t data_offset = x - min_column;
+            for (int y = 0; y < 8; ++y) {
+                uint32_t pixel_num   = ((page * 8) + y) * driver->panel_width + x;
+                uint32_t byte_offset = pixel_num / 8;
+                uint8_t  bit_offset  = pixel_num % 8;
+                column_data[data_offset] |= ((framebuffer[byte_offset] & (1 << bit_offset)) >> bit_offset) << y;
+            }
+        }
+
+        int actual_page  = page;
+        int start_column = min_column;
+        qp_comms_command(device, vtable->opcodes.set_page | actual_page);
+        qp_comms_command(device, vtable->opcodes.set_column_lsb | (start_column & 0x0F));
+        qp_comms_command(device, vtable->opcodes.set_column_msb | (start_column & 0xF0) >> 4);
+        qp_comms_send(device, column_data, cols_required);
+    }
+}
+
+void qp_ssd1322_flush_rot90(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
+    painter_driver_t *                  driver = (painter_driver_t *)device;
+    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
+
+    // TODO: account for offset_x/y in base driver
+    int num_columns = driver->panel_width;
+    int min_page    = dirty->l / 8;
+    int max_page    = dirty->r / 8;
+    int min_column  = dirty->t;
+    int max_column  = dirty->b;
+
+    for (int page = min_page; page <= max_page; ++page) {
+        int     cols_required = max_column - min_column + 1;
+        uint8_t column_data[cols_required];
+        memset(column_data, 0, cols_required);
+        for (int y = min_column; y <= max_column; ++y) {
+            uint16_t data_offset = cols_required - 1 - (y - min_column);
+            for (int x = 0; x < 8; ++x) {
+                uint32_t pixel_num   = y * driver->panel_height + ((page * 8) + x);
+                uint32_t byte_offset = pixel_num / 8;
+                uint8_t  bit_offset  = pixel_num % 8;
+                column_data[data_offset] |= ((framebuffer[byte_offset] & (1 << bit_offset)) >> bit_offset) << x;
+            }
+        }
+
+        int actual_page  = page;
+        int start_column = num_columns - 1 - max_column;
+        qp_comms_command(device, vtable->opcodes.set_page | actual_page);
+        qp_comms_command(device, vtable->opcodes.set_column_lsb | (start_column & 0x0F));
+        qp_comms_command(device, vtable->opcodes.set_column_msb | (start_column & 0xF0) >> 4);
+        qp_comms_send(device, column_data, cols_required);
+    }
+}
+
+void qp_ssd1322_flush_rot180(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
+    painter_driver_t *                  driver = (painter_driver_t *)device;
+    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
+
+    // TODO: account for offset_x/y in base driver
+    int num_pages   = driver->panel_height / 8;
+    int num_columns = driver->panel_width;
+    int min_page    = dirty->t / 8;
+    int max_page    = dirty->b / 8;
+    int min_column  = dirty->l;
+    int max_column  = dirty->r;
+
+    for (int page = min_page; page <= max_page; ++page) {
+        int     cols_required = max_column - min_column + 1;
+        uint8_t column_data[cols_required];
+        memset(column_data, 0, cols_required);
+        for (int x = min_column; x <= max_column; ++x) {
+            uint16_t data_offset = cols_required - 1 - (x - min_column);
+            for (int y = 0; y < 8; ++y) {
+                uint32_t pixel_num   = ((page * 8) + y) * driver->panel_width + x;
+                uint32_t byte_offset = pixel_num / 8;
+                uint8_t  bit_offset  = pixel_num % 8;
+                column_data[data_offset] |= ((framebuffer[byte_offset] & (1 << bit_offset)) >> bit_offset) << (7 - y);
+            }
+        }
+
+        int actual_page  = num_pages - 1 - page;
+        int start_column = num_columns - 1 - max_column;
+        qp_comms_command(device, vtable->opcodes.set_page | actual_page);
+        qp_comms_command(device, vtable->opcodes.set_column_lsb | (start_column & 0x0F));
+        qp_comms_command(device, vtable->opcodes.set_column_msb | (start_column & 0xF0) >> 4);
+        qp_comms_send(device, column_data, cols_required);
+    }
+}
+
+void qp_ssd1322_flush_rot270(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
+    painter_driver_t *                  driver = (painter_driver_t *)device;
+    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
+
+    // TODO: account for offset_x/y in base driver
+    int num_pages  = driver->panel_height / 8;
+    int min_page   = dirty->l / 8;
+    int max_page   = dirty->r / 8;
+    int min_column = dirty->t;
+    int max_column = dirty->b;
+
+    for (int page = min_page; page <= max_page; ++page) {
+        int     cols_required = max_column - min_column + 1;
+        uint8_t column_data[cols_required];
+        memset(column_data, 0, cols_required);
+        for (int y = min_column; y <= max_column; ++y) {
+            uint16_t data_offset = y - min_column;
+            for (int x = 0; x < 8; ++x) {
+                uint32_t pixel_num   = y * driver->panel_height + ((page * 8) + x);
+                uint32_t byte_offset = pixel_num / 8;
+                uint8_t  bit_offset  = pixel_num % 8;
+                column_data[data_offset] |= ((framebuffer[byte_offset] & (1 << bit_offset)) >> bit_offset) << (7 - x);
+            }
+        }
+
+        int actual_page  = num_pages - 1 - page;
+        int start_column = min_column;
+        qp_comms_command(device, vtable->opcodes.set_page | actual_page);
+        qp_comms_command(device, vtable->opcodes.set_column_lsb | (start_column & 0x0F));
+        qp_comms_command(device, vtable->opcodes.set_column_msb | (start_column & 0xF0) >> 4);
+        qp_comms_send(device, column_data, cols_required);
+    }
+}
