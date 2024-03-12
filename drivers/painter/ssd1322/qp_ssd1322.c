@@ -16,6 +16,7 @@
 
 // Helpers for flushing data from the dirty region to the correct location on the OLED
 void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
+//TODO: THESE AREN'T CURRENTLY FUNCTIONAL
 void qp_ssd1322_flush_rot90(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
 void qp_ssd1322_flush_rot180(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
 void qp_ssd1322_flush_rot270(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
@@ -27,14 +28,12 @@ void qp_ssd1322_flush_rot270(painter_device_t device, surface_dirty_data_t *dirt
 typedef struct ssd1322_device_t {
     oled_panel_painter_device_t oled;
 
-    uint8_t framebuffer[SURFACE_REQUIRED_BUFFER_BYTE_SIZE(480,128,1)];
+    uint8_t framebuffer[SURFACE_REQUIRED_BUFFER_BYTE_SIZE(480,128,8)];
 } ssd1322_device_t;
 
 
 ssd1322_device_t  ssd1322_drivers[SSD1322_NUM_DEVICES] = {0};
 
-// TODO: REMOVE THIS
-static uint8_t temp_buf[8192];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialization
 
@@ -44,7 +43,7 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
 //TODO: CORRECTLY WORK OUT WHAT ORIENTATIONS WE'RE IN
     // Configure the rotation (i.e. the ordering and direction of memory writes in GRAM)
     const uint8_t madctl[] = {
-        [QP_ROTATION_0]   = SSD1322_MADCTL_MY | SSD1322_MADCTL_MX,
+        [QP_ROTATION_0]   = SSD1322_MADCTL_MY | SSD1322_MADCTL_MX | SSD1322_MADCTL_NIBBLE_REMAP,
         [QP_ROTATION_90]  = SSD1322_MADCTL_MX | SSD1322_MADCTL_MY | SSD1322_MADCTL_MV,
         [QP_ROTATION_180] = SSD1322_MADCTL_MX,
         [QP_ROTATION_270] = SSD1322_MADCTL_MV,
@@ -91,8 +90,9 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
     qp_comms_command_databyte(device, SSD1322_STARTLINE, (rotation == QP_ROTATION_0 || rotation == QP_ROTATION_90) ? driver->oled.base.panel_height : 0);
 
 // KEEP THIS FOR NOW TO BLANK THE DISPLAY AS THERE DOESN'T SEEM TO BE A CLEAR ALL PIXELS FEATURE...
-    uint8_t xbuf[2] = {24, 87};
-    uint8_t ybuf[2] = {0, 63};
+    uint8_t temp_buf[480*128/2] ; // 2 pixels per byte
+    uint8_t xbuf[2] = {0, 119}; // 4 pixels per column
+    uint8_t ybuf[2] = {0, 127};
     qp_comms_command_databuf(device, SSD1322_SETROW, ybuf, sizeof(ybuf)) ;
     qp_comms_command_databuf(device, SSD1322_SETCOLUMN, xbuf, sizeof(xbuf)) ;
     qp_comms_command(device, SSD1322_WRITERAM) ;
@@ -175,7 +175,7 @@ painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel
     for (uint32_t i = 0; i < SSD1322_NUM_DEVICES; ++i) { 
         ssd1322_device_t *driver = &ssd1322_drivers[i];
         if (!driver->oled.base.driver_vtable) {
-            painter_device_t surface = qp_make_mono1bpp_surface_advanced(&driver->oled.surface, 1, panel_width, panel_height, driver->framebuffer);
+            painter_device_t surface = qp_make_mono8bpp_surface_advanced(&driver->oled.surface, 1, panel_width, panel_height, driver->framebuffer);
             if (!surface) {
                 return NULL;
             }
@@ -187,7 +187,7 @@ painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel
             driver->oled.base.rotation              = QP_ROTATION_0;
             driver->oled.base.offset_x              = 0;
             driver->oled.base.offset_y              = 0;
-            driver->oled.base.native_bits_per_pixel = 1; // mono1bpp for now;
+            driver->oled.base.native_bits_per_pixel = 8; // mono8bpp, although screen is only 4bpp, this is handled in the FLUSH functions
 
             // SPI and other pin configuration
             driver->oled.base.comms_config                                   = &driver->oled.spi_dc_reset_config;
@@ -210,54 +210,6 @@ painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel
     return NULL;
 }
 
-// Viewport to draw to - Custom version, since we have multiple pixels per byte
-bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, uint16_t right, uint16_t bottom) {
-/*    painter_driver_t *                          driver = (painter_driver_t *)device;
-    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
-
-    // Fix up the drawing location if required
-    left += driver->offset_x;
-    right += driver->offset_x;
-    top += driver->offset_y;
-    bottom += driver->offset_y;
-
-    // Check if we need to manually swap the window coordinates based on whether or not we're in a sideways rotation
-    if (vtable->swap_window_coords && (driver->rotation == QP_ROTATION_90 || driver->rotation == QP_ROTATION_270)) {
-        uint16_t temp;
-
-        temp = left;
-        left = top;
-        top  = temp;
-
-        temp   = right;
-        right  = bottom;
-        bottom = temp;
-    }
-
-    // Need to work out which addresses we actually need for the given pixels
-    uint8_t start_x, end_x, start_y, end_y ;
-    start_x = left >> 2 ;
-    end_x = right >> 2 ;
-    start_y = top ; // Only actually the width that's multiples....
-    end_y = bottom ;
-
-    if (1) { //(vtable->num_window_bytes == 1) {
-        // Set up the x-window
-        //uint8_t xbuf[2] = {left & 0xFF, right & 0xFF};
-        uint8_t xbuf[2] = {start_x, end_x};
-        qp_comms_command_databuf(device, vtable->opcodes.set_column_address, xbuf, sizeof(xbuf));
-
-        // Set up the y-window
-        //uint8_t ybuf[2] = {top & 0xFF, bottom & 0xFF};
-        uint8_t ybuf[2] = {start_y, end_y};
-        qp_comms_command_databuf(device, vtable->opcodes.set_row_address, ybuf, sizeof(ybuf));
-    }
-
-    // Lock in the window
-    qp_comms_command(device, vtable->opcodes.enable_writes);
-*/
-    return true;
-}
 #endif // QUANTUM_PAINTER_SSD1322_SPI_ENABLE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,37 +218,58 @@ bool qp_ssd1322_viewport(painter_device_t device, uint16_t left, uint16_t top, u
 
 void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
     painter_driver_t *                  driver = (painter_driver_t *)device;
-    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
+//    NOT USING THIS HERE
+//    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
 
+    // Set up window to write to on display (16-bit words (four x pixels per word)
+    uint16_t left, right, top, bottom;
+    left = (driver->offset_x + dirty->l) >> 2 ;
+    right = (driver->offset_x + dirty->r) >> 2 ;
+    top = driver->offset_y + dirty->t ;
+    bottom = driver->offset_y + dirty->b ;
+
+    uint8_t xbuf[2] = {left & 0xFF, right & 0xFF};
+    qp_comms_command_databuf(device, SSD1322_SETCOLUMN, xbuf, sizeof(xbuf));
+
+    uint8_t ybuf[2] = {top & 0xFF, bottom & 0xFF};
+    qp_comms_command_databuf(device, SSD1322_SETROW, ybuf, sizeof(ybuf));
+
+    // Lock in the window
+    qp_comms_command(device, SSD1322_WRITERAM);
+
+    // Expand dirty section to match word boundaries as we need to write all of it
+    dirty->l -= dirty->l%4 ;
+    dirty->r += 3 - dirty->r%4 ;
+/*  JUST KEEPING THESE TO COMPARE DIFFERENCES FOR OTHER ROTATIONS....!
     // TODO: account for offset_x/y in base driver
     int min_page   = dirty->t / 8;
     int max_page   = dirty->b / 8;
     int min_column = dirty->l;
     int max_column = dirty->r;
+*/
 
-    for (int page = min_page; page <= max_page; ++page) {
-        int     cols_required = max_column - min_column + 1;
-        uint8_t column_data[cols_required];
-        memset(column_data, 0, cols_required);
-        for (int x = min_column; x <= max_column; ++x) {
-            uint16_t data_offset = x - min_column;
-            for (int y = 0; y < 8; ++y) {
-                uint32_t pixel_num   = ((page * 8) + y) * driver->panel_width + x;
-                uint32_t byte_offset = pixel_num / 8;
-                uint8_t  bit_offset  = pixel_num % 8;
-                column_data[data_offset] |= ((framebuffer[byte_offset] & (1 << bit_offset)) >> bit_offset) << y;
-            }
+    uint16_t dirty_width = 1 + dirty->r - dirty->l ;
+    uint16_t dirty_height = 1 + dirty->b - dirty->t ;
+    uint16_t num_dirty_pixels = dirty_width * dirty_height ;
+    uint8_t write_data[num_dirty_pixels/2] ;
+    memset(write_data, 0, sizeof(write_data)) ;
+    uint16_t word_offset = 0 ;
+    uint16_t word_width = dirty_width / 2 ; // This should always work out exactly as we've already adjusted elsewhere
+    uint32_t x_offset = dirty->l ;
+    uint32_t y_offset = dirty->t ;
+    for (int y=0; y < dirty_height; y++) {
+        for (int x=0; x < dirty_width; x++) {
+            uint32_t pixel_num = (y+y_offset)*driver->panel_width + x+x_offset ;
+            word_offset = (y*word_width) + (x>>1) ;
+            uint8_t word_shift = 4*(1-(x%2)) ;
+            write_data[word_offset] |= (0xF & (framebuffer[pixel_num] >> 4)) << word_shift;
         }
-
-        int actual_page  = page;
-        int start_column = min_column;
-        qp_comms_command(device, vtable->opcodes.set_page | actual_page);
-        qp_comms_command(device, vtable->opcodes.set_column_lsb | (start_column & 0x0F));
-        qp_comms_command(device, vtable->opcodes.set_column_msb | (start_column & 0xF0) >> 4);
-        qp_comms_send(device, column_data, cols_required);
     }
+
+    qp_comms_send(device, write_data, sizeof(write_data));
 }
 
+//TODO: THIS VERSION HASN'T BEEN UPDATED
 void qp_ssd1322_flush_rot90(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
     painter_driver_t *                  driver = (painter_driver_t *)device;
     oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
@@ -331,6 +304,7 @@ void qp_ssd1322_flush_rot90(painter_device_t device, surface_dirty_data_t *dirty
     }
 }
 
+//TODO: THIS VERSION HASN'T BEEN UPDATED
 void qp_ssd1322_flush_rot180(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
     painter_driver_t *                  driver = (painter_driver_t *)device;
     oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
@@ -367,6 +341,7 @@ void qp_ssd1322_flush_rot180(painter_device_t device, surface_dirty_data_t *dirt
 }
 
 void qp_ssd1322_flush_rot270(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
+//TODO: THIS VERSION HASN'T BEEN UPDATED
     painter_driver_t *                  driver = (painter_driver_t *)device;
     oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
 

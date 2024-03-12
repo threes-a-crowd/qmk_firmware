@@ -10,7 +10,7 @@
 #include <math.h>
 #include <limits.h>
 #include "quantum.h"
-#include "noto_sans_12.qff.h"
+#include "noto_sans_24.qff.h"
 #include <qp.h>
 //#include "printf/printf.h"
 

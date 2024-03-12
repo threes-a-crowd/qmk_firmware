@@ -4,5 +4,5 @@ SERIAL_DRIVER = vendor
 #DIP_SWITCH_ENABLE = yes
 QUANTUM_PAINTER_ENABLE = yes
 QUANTUM_PAINTER_DRIVERS += ssd1322_spi
-SRC += noto_sans_12.qff.c
+SRC += noto_sans_24.qff.c
 SRC += tinyexpr.c

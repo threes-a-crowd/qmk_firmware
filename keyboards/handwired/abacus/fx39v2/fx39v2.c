@@ -24,20 +24,28 @@ void keyboard_post_init_kb(void) {
 
     qp_init(display, QP_ROTATION_0);
     qp_set_viewport_offsets(display, 96, 0) ;
-    default_font = qp_load_font_mem(font_noto_sans_12);
+    default_font = qp_load_font_mem(font_noto_sans_24);
     
     //qp_power(display, true) ;
 
-/*    if (default_font != NULL) {
+    if (default_font != NULL) {
         static const char *text = "Hello World from QMK";
 //        int16_t width = qp_textwidth(default_font, text) ;
 //        qp_drawtext(display, 0, 0, default_font, text);
-        qp_drawtext(display, 0, 32, default_font, text);
+        qp_drawtext(display, 0, 0, default_font, text);
+        sprintf(display_result, "%d, %d", default_font->line_height, qp_textwidth(default_font,text)) ;
+        qp_drawtext_recolor(display, 0, default_font->line_height, default_font, display_result, 0, 0, 0, 0, 0, 255);
 //        qp_drawtext(display, 0, 127-default_font->line_height, default_font, text);
     }
-*/
+    else
+    {
+        qp_rect(display, 1, 0, 7, 3, 0, 255, 255, false) ;
+    }
 
-    //qp_rect(display, 0, 0, 255, 63, 0, 255, 255, true) ;
+    for (int x=0; x<32; x++) {
+        qp_rect(display,8*x,2*default_font->line_height,(8*x)+7,2*default_font->line_height+7, 0, 255, 8*x, true) ;
+    }
+//    qp_rect(display, 1, 0, 7, 3, 0, 255, 255, false) ;
 
 
 //    qp_line(display, 0, 0, 0, 0, 0, 255, 255) ;
@@ -52,7 +60,7 @@ void keyboard_post_init_kb(void) {
 //    qp_line(display, 1, 9, 4, 9, 0, 255, 255) ;
 //    qp_line(display, 2, 10, 5, 10, 0, 255, 255) ;
 //    qp_line(display, 3, 11, 6, 11, 0, 255, 255) ;
-    qp_line(display, 0, 0, 0, 62, 0, 255, 255) ;
+//    qp_line(display, 0, 0, 0, 62, 0, 255, 255) ;
 
 /*    uint16_t x,y;
     for (x=0; x<256; x++)
