@@ -83,6 +83,7 @@ typedef enum {
 } Te_Angle_Type ;
 
 void te_set_angle_units(Te_Angle_Type units);
+Te_Angle_Type  te_get_angle_units(void);
 
 double te_trig(double (*trig_func)(double), double x);
 #endif

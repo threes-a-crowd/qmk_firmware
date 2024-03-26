@@ -67,6 +67,10 @@ void te_set_angle_units(Te_Angle_Type units) {
     global_angle_units = units;
 }
 
+Te_Angle_Type te_get_angle_units(void) {
+    return global_angle_units;
+}
+
 #define rad2deg(X) ((X) * 180.0 / pi()) 
 #define deg2rad(X) ((X) * pi() / 180.0)
 #define rad2grad(X) ((X) * 200.0 / pi()) 

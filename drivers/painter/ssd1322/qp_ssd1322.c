@@ -14,6 +14,9 @@
 #    include "qp_comms_spi.h"
 #endif // QUANTUM_PAINTER_SSD1322_SPI_ENABLE
 
+//TODO: This is a temporary test to see if we're limited by dynamic array size
+static uint8_t write_data[480*128/2] ;
+
 // Helpers for flushing data from the dirty region to the correct location on the OLED
 void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer);
 //TODO: THESE AREN'T CURRENTLY FUNCTIONAL
@@ -106,6 +109,7 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
 
 // Screen flush
 bool qp_ssd1322_flush(painter_device_t device) {
+    qp_dprintf("qp_ssd1322_flush entry\n");
     ssd1322_device_t *driver = (ssd1322_device_t *)device;
 
     if (!driver->oled.surface.dirty.is_dirty) {
@@ -113,7 +117,6 @@ bool qp_ssd1322_flush(painter_device_t device) {
     }
 
     switch (driver->oled.base.rotation) {
-        default:
         case QP_ROTATION_0:
             qp_ssd1322_flush_rot0(device, &driver->oled.surface.dirty, driver->framebuffer);
             break;
@@ -126,10 +129,14 @@ bool qp_ssd1322_flush(painter_device_t device) {
         case QP_ROTATION_270:
             qp_ssd1322_flush_rot270(device, &driver->oled.surface.dirty, driver->framebuffer);
             break;
+        default:
+            qp_dprintf("qp_ssd1322_flush error - Invalid Rotation\n");
     }
 
     // Clear the dirty area
     qp_flush(&driver->oled.surface);
+
+    qp_dprintf("qp_ssd1322_flush ok\n");
 
     return true;
 }
@@ -217,9 +224,8 @@ painter_device_t qp_ssd1322_make_spi_device(uint16_t panel_width, uint16_t panel
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty, const uint8_t *framebuffer) {
+    qp_dprintf("qp_ssd1322_flush_rot0 entry\n");
     painter_driver_t *                  driver = (painter_driver_t *)device;
-//    NOT USING THIS HERE
-//    oled_panel_painter_driver_vtable_t *vtable = (oled_panel_painter_driver_vtable_t *)driver->driver_vtable;
 
     // Set up window to write to on display (16-bit words (four x pixels per word)
     uint16_t left, right, top, bottom;
@@ -251,8 +257,10 @@ void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty,
     uint16_t dirty_width = 1 + dirty->r - dirty->l ;
     uint16_t dirty_height = 1 + dirty->b - dirty->t ;
     uint16_t num_dirty_pixels = dirty_width * dirty_height ;
-    uint8_t write_data[num_dirty_pixels/2] ;
-    memset(write_data, 0, sizeof(write_data)) ;
+
+    //uint8_t write_data[num_dirty_pixels/2] ; // CAN'T USE THIS HERE AS MAX SIZE IS LIMITED
+    //memset(write_data, 0, sizeof(write_data)) ;
+    memset(write_data, 0, num_dirty_pixels/2) ;
     uint16_t word_offset = 0 ;
     uint16_t word_width = dirty_width / 2 ; // This should always work out exactly as we've already adjusted elsewhere
     uint32_t x_offset = dirty->l ;
@@ -266,7 +274,9 @@ void qp_ssd1322_flush_rot0(painter_device_t device, surface_dirty_data_t *dirty,
         }
     }
 
-    qp_comms_send(device, write_data, sizeof(write_data));
+    //qp_comms_send(device, write_data, sizeof(write_data));
+    qp_comms_send(device, write_data, num_dirty_pixels/2);
+    qp_dprintf("qp_ssd1332_flush_rot0 ok\n");
 }
 
 //TODO: THIS VERSION HASN'T BEEN UPDATED

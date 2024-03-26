@@ -12,8 +12,50 @@ bool all_clear = true ;
 double result = 0 ;
 
 static painter_device_t display;
-static painter_font_handle_t default_font;
+static painter_font_handle_t status_font;
+static painter_font_handle_t expr_font;
+static painter_font_handle_t result_font;
 
+static const char *text_mode_0 = " KB " ;
+static const char *text_mode_1 = " CALC " ;
+static const char *text_mode_2 = " OrCAD " ;
+static const char *text_caps = " CAPS " ;
+static const char *text_angle_0 = " DEG " ;
+static const char *text_angle_1 = " RAD " ;
+static const char *text_angle_2 = " GRA " ;
+
+void update_status_bar(void) {
+    // These are temporary until I work out where to get them from
+    int curr_layer = 2 ;
+    bool isCaps = true ;
+    int angle_mode = 0 ; /// TE_DEGREES???
+    if (status_font != NULL) {
+       qp_drawtext_recolor(display, 0, 0, status_font, text_mode_0, 0, 0, curr_layer == 0 ? 0 : 255, 0, 0, curr_layer == 0 ? 255 : 0) ; 
+       qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0), 0, status_font, text_mode_1, 0, 0, curr_layer == 1 ? 0 : 255, 0, 0, curr_layer == 1 ? 255 : 0) ; 
+       qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0)+qp_textwidth(status_font, text_mode_1), 0, status_font, text_mode_2, 0, 0, curr_layer == 2 ? 1 : 255, 0, 0, curr_layer == 2 ? 255 : 0) ; 
+        if (isCaps) {
+           qp_drawtext(display, 256 - qp_textwidth(status_font, text_caps), 0, status_font, text_caps) ; 
+        }
+        switch (angle_mode) {
+            case 0:
+                qp_drawtext(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0), 0, status_font, text_angle_0) ;
+                break ;
+            case 1:
+                qp_drawtext(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_1), 0, status_font, text_angle_1) ;
+                break ;
+            case 2:
+                qp_drawtext(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_2), 0, status_font, text_angle_2) ;
+                break ;
+            default:
+                break ;
+        }
+
+        // Blank the extra height of the highlighting since we're not using any dangling characters
+        qp_rect(display, 0, status_font->line_height - 2, 255, status_font->line_height, 0, 0, 0, true) ;
+
+        qp_flush(display) ;
+    }
+}
 
 void keyboard_post_init_kb(void) {
 #ifdef TE_SUPPORT_ANGLE_CONVERSION
@@ -24,55 +66,31 @@ void keyboard_post_init_kb(void) {
 
     qp_init(display, QP_ROTATION_0);
     qp_set_viewport_offsets(display, 96, 0) ;
-    default_font = qp_load_font_mem(font_noto_sans_24);
+    status_font = qp_load_font_mem(font_noto_sans_10);
+    expr_font = qp_load_font_mem(font_noto_sans_18);
+    result_font = qp_load_font_mem(font_noto_sans_bold_24);
     
     //qp_power(display, true) ;
 
-    if (default_font != NULL) {
+    if (expr_font != NULL) {
         static const char *text = "Hello World from QMK";
-//        int16_t width = qp_textwidth(default_font, text) ;
-//        qp_drawtext(display, 0, 0, default_font, text);
-        qp_drawtext(display, 0, 0, default_font, text);
-        sprintf(display_result, "%d, %d", default_font->line_height, qp_textwidth(default_font,text)) ;
-        qp_drawtext_recolor(display, 0, default_font->line_height, default_font, display_result, 0, 0, 0, 0, 0, 255);
-//        qp_drawtext(display, 0, 127-default_font->line_height, default_font, text);
-    }
-    else
-    {
-        qp_rect(display, 1, 0, 7, 3, 0, 255, 255, false) ;
+//        int16_t width = qp_textwidth(expr_font, text) ;
+//        qp_drawtext(display, 0, 0, expr_font, text);
+        qp_drawtext(display, 0, status_font->line_height+4, expr_font, text);
+        sprintf(display_result, "%d, %d", result_font->line_height, qp_textwidth(result_font,text)) ;
+        qp_drawtext(display, 256-qp_textwidth(result_font, display_result), 64-result_font->line_height, result_font, display_result);
+//        qp_drawtext(display, 0, 127-expr_font->line_height, expr_font, text);
     }
 
-    for (int x=0; x<32; x++) {
-        qp_rect(display,8*x,2*default_font->line_height,(8*x)+7,2*default_font->line_height+7, 0, 255, 8*x, true) ;
-    }
-//    qp_rect(display, 1, 0, 7, 3, 0, 255, 255, false) ;
-
-
-//    qp_line(display, 0, 0, 0, 0, 0, 255, 255) ;
-//    qp_line(display, 0, 1, 1, 1, 0, 255, 255) ;
-//    qp_line(display, 0, 2, 2, 2, 0, 255, 255) ;
-//    qp_line(display, 0, 3, 3, 3, 0, 255, 255) ;
-//    qp_line(display, 0, 4, 4, 4, 0, 255, 255) ;
-//    qp_line(display, 0, 5, 5, 5, 0, 255, 255) ;
-//    qp_line(display, 0, 6, 6, 6, 0, 255, 255) ;
-//    qp_line(display, 0, 7, 7, 7, 0, 255, 255) ;
-//    qp_line(display, 0, 8, 3, 8, 0, 255, 255) ;
-//    qp_line(display, 1, 9, 4, 9, 0, 255, 255) ;
-//    qp_line(display, 2, 10, 5, 10, 0, 255, 255) ;
-//    qp_line(display, 3, 11, 6, 11, 0, 255, 255) ;
-//    qp_line(display, 0, 0, 0, 62, 0, 255, 255) ;
-
-/*    uint16_t x,y;
-    for (x=0; x<256; x++)
-    {
-        for (y=0; y<64;y++)
-        {
-            qp_setpixel(display, x, y, 0, 255, 255) ;          
-        }
-    }
-*/
+// Draw a grayscale stripe
+//    for (int x=0; x<32; x++) {
+//        qp_rect(display,8*x,2*expr_font->line_height,(8*x)+7,2*expr_font->line_height+7, 0, 255, 8*x, true) ;
+//    }
 
     qp_flush(display) ;
+
+    update_status_bar() ;
+
 }
 
 /*
