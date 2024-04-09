@@ -1,16 +1,11 @@
 // Copyright 2023 QMK
+
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
 #include "v1.h"
 #include "keymap_uk.h"
 #include "sendstring_uk.h"
-
-enum layers {
-    LAYER_KB,
-    LAYER_CALC,
-    LAYER_ORCAD
-} ;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
@@ -34,39 +29,78 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      *  │Esc│                                                                         │Del│
      *  └───┘                                                                         └───┘
      *  ┌───┐ ┌───┬───┬───┬───┬───┬───┬───┐             ┌───┬───┬───┬───┬───┬───┬───┐ ┌───┐
-     *  │TG1│ │ `¬│ 1 │ 2 │ 3 │ 4 │ 5 │ -_│             │ =+│ 6 │ 7 │ 8 │ 9 │ 0 │Bks│ │Hom│
+     *  │   │ │ `¬│ 1 │ 2 │ 3 │ 4 │ 5 │ -_│             │ =+│ 6 │ 7 │ 8 │ 9 │ 0 │Bks│ │Hom│
      *  ├───┤ ├───┼───┼───┼───┼───┼───┼───┤             ├───┼───┼───┼───┼───┼───┼───┤ ├───┤
-     *  │   │ │Tab│ Q │ W │ E │ R │ T │ [{│             │ ]}│ Y │ U │ I │ O │ P │Ent│ │PgU│
+     *  │   │ │Tab│ Q │ W │ E │ R │ T │ [{│             │ ]}│ Y │ U │ I │ O │ P │ #~│ │PgU│
      *  ├───┤ ├───┼───┼───┼───┼───┼───┼───┤             ├───┼───┼───┼───┼───┼───┼───┤ ├───┤
-     *  │   │ │Cap│ A │ S │ D │ F │ G │ '@│             │ #~│ H │ J │ K │ L │ ;:│XXX│ │PgD│
+     *  │   │ │Cap│ A │ S │ D │ F │ G │ ( │             │ ) │ H │ J │ K │ L │ ;:│ '@│ │PgD│
      *  ├───┤ ├───┼───┼───┼───┼───┼───┼───┤             ├───┼───┼───┼───┼───┼───┼───┤ ├───┤
-     *  │DBG│ │ \|│ Z │ X │ C │ V │ B │Spc│             │ Up│ N │ M │ ,<│ .>│ /?│Sft│ │End│
+     *  │   │ │ \|│ Z │ X │ C │ V │ B │Spc│             │ Up│ N │ M │ ,<│ .>│ /?│Sft│ │End│
      *  └───┘ ├───┼───┼───┼───┴───┼───┼───┼───┐     ┌───┼───┼───┼───┴───┼───┼───┼───┤ └───┘
-     *        │Ctl│Win│Alt││   │  │Sft│XXX│Ent│     │Lft│ Dn│ Rt│  │   ││Alt│ Fn│Ctl│     
+     *        │Ctl│Win│Alt││   │  │Sft│XXX│Ent│     │Lft│ Dn│ Rt│  │ Fn││Alt│ Fn│Ctl│     
      *        └───┴───┴───┘└───┘  └───┴───┴───┘     └───┴───┴───┘  └───┘└───┴───┴───┘     
      */
     [LAYER_KB] = LAYOUT_8x5_offset(
         KC_ESC ,                                                                                                                                                            KC_DEL ,
-        TG(1)  ,    KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   , KC_MINS,                        KC_EQL , KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,    KC_HOME,
-        KC_NO  ,    KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   , KC_LBRC,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_ENT ,    KC_PGUP,
-        KC_NO  ,    KC_CAPS, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_QUOT,                        KC_NUHS, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, XXXXXXX,    KC_PGDN,
-        DB_TOGG,    KC_NUBS, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_SPC ,                        KC_UP  , KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,    KC_END ,
-                    KC_LCTL, KC_LGUI, KC_LALT,     KC_NO  ,      KC_LSFT, XXXXXXX, KC_ENT ,      KC_LEFT, KC_DOWN, KC_RGHT,      KC_NO  ,     KC_RALT, KC_NO  , KC_RCTL
+        KC_NO  ,    KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   , KC_MINS,                        KC_EQL , KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,    KC_HOME,
+        KC_NO  ,    KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   , KC_LBRC,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_NUHS,    KC_PGUP,
+        KC_NO  ,    LT(5,KC_CAPS), KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_LPRN,                        KC_RPRN, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_QUOT,    KC_PGDN,
+        KC_NO  ,    KC_NUBS, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_SPC ,                        KC_UP  , KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,    KC_END ,
+                    KC_LCTL, KC_LGUI, KC_LALT,     KC_DEL ,      KC_LSFT, XXXXXXX, KC_ENT ,      KC_LEFT, KC_DOWN, KC_RGHT,      KC_NO  ,     KC_RALT, MO(1)  , KC_RCTL
     ),
-    [LAYER_CALC] = LAYOUT_8x5_offset(
-        KC_ESC ,                                                                                                                                                            KC_DEL ,
-        KC_TRNS,    KC_GRV , KC_1   , CK_AC  , CK_C   , CK_BRKO, CK_BRKC, CK_SLS ,                        KC_EQL , KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,    KC_HOME,
-        KC_NO  ,    KC_TAB , CK_SIN , CK_POW , CK_7   , CK_8   , CK_9   , CK_AST ,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_ENT ,    KC_PGUP,
-        KC_NO  ,    KC_CAPS, CK_COS , CK_E   , CK_4   , CK_5   , CK_6   , CK_MNS ,                        KC_NUHS, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, XXXXXXX,    KC_PGDN,
-        KC_TRNS,    KC_BSLS, CK_TAN , CK_LOG , CK_1   , CK_2   , CK_3   , CK_PLS ,                        KC_UP  , KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,    KC_END ,
-                    KC_LCTL, KC_LGUI, CK_PI  ,     CK_0   ,      CK_DOT , XXXXXXX, LT(0, KC_NO), KC_LEFT, KC_DOWN, KC_RGHT,      KC_NO  ,     KC_RALT, KC_NO  , KC_RCTL
+    [LAYER_KB_FKEYS] = LAYOUT_8x5_offset( // Shared F-keys and num-pad
+        _______,                                                                                                                                                            _______,
+        _______,    _______, KC_F1  , KC_F2  , KC_F3  , KC_F4  , KC_F5  , _______,                        _______, KC_F6  , KC_F7  , KC_F8  , KC_F9  , KC_F10 , _______,    _______,
+        _______,    _______, _______, _______, KC_P7  , KC_P8  , KC_P9  , _______,                        _______, _______, _______, _______, _______, KC_PSCR, _______,    _______,
+        _______,    _______, _______, _______, KC_P4  , KC_P5  , KC_P6  , KC_PMNS,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, _______, _______, KC_P1  , KC_P2  , KC_P3  , _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+                    _______, _______, _______,     KC_P0  ,      MULT(3), XXXXXXX, _______,      _______, _______, _______,      _______,     _______, KC_TRNS, _______
     ),
     [LAYER_ORCAD] = LAYOUT_8x5_offset(
-        KC_ESC ,                                                                                                                                                            KC_DEL ,
-        KC_NO  ,    KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   , KC_MINS,                        KC_EQL , KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,    KC_HOME,
-        KC_NO  ,    KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   , KC_LBRC,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_ENT ,    KC_PGUP,
-        KC_NO  ,    KC_CAPS, KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_NUBS,                        KC_NUHS, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, XXXXXXX,    KC_PGDN,
-        KC_NO  ,    KC_BSLS, KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_SPC ,                        KC_UP  , KC_N   , KC_M   , KC_COMM, KC_DOT , KC_SLSH, KC_RSFT,    KC_END ,
-                    KC_LCTL, KC_LGUI, KC_LALT,     KC_NO  ,      KC_NO  , XXXXXXX, KC_NO  ,      KC_LEFT, KC_DOWN, KC_RGHT,      KC_NO  ,     KC_RALT, KC_NO  , KC_RCTL
+        _______,                                                                                                                                                            _______,
+        KC_F9  ,    KC_DEL , _______, _______, _______, _______, _______, KC_BSPC,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        KC_F10 ,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        KC_F11 ,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        KC_F12 ,    CK_ORIY, _______, MULT(1), _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+                    _______, _______, _______,     _______,      _______, XXXXXXX, LT(1,KC_ENT), _______, _______, _______,      _______,     _______, _______, _______
+    ),
+    [LAYER_CALC] = LAYOUT_8x5_offset(
+        KC_ESC ,                                                                                                                                                            _______,
+        _______,    OSL(4) , CK_DRG , CK_AC  , CK_C   , CK_BRKO, CK_BRKC, CK_SLS ,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, CK_SIN , CK_POW , CK_7   , CK_8   , CK_9   , CK_AST ,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, CK_COS , CK_E   , CK_4   , CK_5   , CK_6   , CK_MNS ,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, CK_TAN , _______, CK_1   , CK_2   , CK_3   , MULT(4),                        _______, _______, _______, _______, _______, _______, _______,    _______,
+                    _______, _______, MULT(5),     CK_0   ,      MULT(2), XXXXXXX, MULT(0),      _______, _______, _______,      _______,     _______, _______, _______
+    ),
+    [LAYER_CALC2] = LAYOUT_8x5_offset(
+        _______,                                                                                                                                                            _______,
+        _______,    KC_TRNS, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, CK_ASIN, CK_SQRT, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, CK_ACOS, CK_LOG , _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, CK_ATAN, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+                    _______, _______, CK_ANS ,     _______,      _______, XXXXXXX, _______,      _______, _______, _______,      _______,     _______, _______, _______
+    ),
+    [LAYER_SWITCH] = LAYOUT_8x5_offset(
+        _______,                                                                                                                                                            _______,
+        TO(0)  ,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        TO(2)  ,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        TO(3)  ,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+                    _______, _______, KC_TRNS,     _______,      _______, XXXXXXX, _______,      _______, _______, _______,      _______,     _______, _______, _______
     )
 };
+
+/* BLANK LAYER FOR EASIER COPYING
+    [LAYER_TRNS] = LAYOUT_8x5_offset(
+        _______,                                                                                                                                                            _______,
+        _______,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+        _______,    _______, _______, _______, _______, _______, _______, _______,                        _______, _______, _______, _______, _______, _______, _______,    _______,
+                    _______, _______, _______,     _______,      _______, XXXXXXX, _______,      _______, _______, _______,      _______,     _______, _______, _______
+    ),
+ */
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    return true ;
+} 

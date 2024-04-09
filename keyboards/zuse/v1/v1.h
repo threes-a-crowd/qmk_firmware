@@ -14,7 +14,18 @@
 #include "noto_sans_18.qff.h"
 #include "noto_sans_bold_24.qff.h"
 #include <qp.h>
-//#include "printf/printf.h"
+
+// Define this here as we use them to update the display
+enum layers {
+    LAYER_KB,
+    LAYER_KB_FKEYS,
+    LAYER_ORCAD,
+    LAYER_CALC,
+    LAYER_CALC2,
+    LAYER_SWITCH
+} ;
+
+#define MULT(x) LT(x, KC_NO)
 
 enum my_keycodes
 {
@@ -34,7 +45,8 @@ enum my_keycodes
     CK_SLS,
     CK_DOT,
     CK_COMM,
-    CK_ENT,
+    CK_EQ,
+    CK_RES,
     CK_PI,
     CK_E,
     CK_SIN,
@@ -61,7 +73,10 @@ enum my_keycodes
     CK_SQ,
     CK_INV,
     CK_SQRT,
-    CK_DEG,
-    CK_RAD,
-    CK_GRA
+    CK_ANS,
+    CK_DRG,
+    CK_ORX,
+    CK_ORIX,
+    CK_ORIY,
+    CK_LTOG
 };
