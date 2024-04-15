@@ -44,7 +44,8 @@
 /* Split Keyboard Settings */
 #define SPLIT_HAND_PIN GP0
 #define SPLIT_HAND_PIN_LOW_IS_LEFT
-//#define MASTER_LEFT
+#define MASTER_LEFT
+#undef SPLIT_USB_DETECT
 #define SERIAL_USART_FULL_DUPLEX
 #define SERIAL_USART_PIN_SWAP
 #define SOFT_SERIAL_PIN GP4

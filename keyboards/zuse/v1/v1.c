@@ -27,9 +27,6 @@ static const char *text_angle_0 = " DEG " ;
 static const char *text_angle_1 = " RAD " ;
 static const char *text_angle_2 = " GRA " ;
 
-static uint8_t layer_cycle[] = {LAYER_KB, LAYER_ORCAD, LAYER_CALC}; // This is the set of layers we want to loop through
-static uint8_t layer_point = 0;
-
 void update_status_bar(void) {
     // Get curernt status
     bool isKb = IS_LAYER_OFF(LAYER_ORCAD) & IS_LAYER_OFF(LAYER_CALC) ;
@@ -108,49 +105,7 @@ void keyboard_post_init_kb(void) {
         qp_drawtext(display, 0, status_font->line_height+4, expr_font, text);
     }
 
-    layer_point = 0;
     update_status_bar() ;
-}
-
-bool encoder_update_kb(uint8_t index, bool clockwise) {
-    if (!encoder_update_user(index, clockwise)) {
-        return false; // Do not process further events if user function exists and returns false
-    }
-
-    uint8_t current_layer = get_highest_layer(layer_state);
-
-    if (index == 0) {
-        if (clockwise) {
-            switch (current_layer) {
-                case 0:
-//                    tap_code16(DF(1));
-                    break;
-                case 1:
-//                    tap_code16(DF(2));
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            switch (current_layer) {
-                case 1:
-//                    tap_code16(DF(0));
-                    break;
-                case 2:
-//                    tap_code16(DF(1));
-                    break;
-                default:
-                    break;
-            }
-        }
-    } else if (index == 1) {
-        if (clockwise) {
-            // TBD
-        } else {
-            // TBD
-        }
-    }
-    return true;
 }
 
 bool led_update_kb(led_t led_state) {
@@ -236,24 +191,24 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 if (record->tap.count) { // TAP
                     keycode = CK_EQ;
                 } else {                // HOLD
-                   keycode = CK_RES;
+                    keycode = CK_RES;
                 }
             } else {
                 return false; // Don't want QMK processing the release of these buttons
             }
             break;
-        case MULT(1): // OrCAD 'x ' or 'ix '
-            if (record->event.pressed) {
+        case KC_X: // OrCAD 'x ' or 'ix '
+            if ((record->event.pressed) && IS_LAYER_ON(LAYER_ORCAD)) {
                 if (record->tap.count) { // TAP
                     keycode = CK_ORX;
                 } else {                // HOLD
-                   keycode = CK_ORIX;
+                    keycode = CK_ORIX;
                 }
                 // Turn on the numpad as the next thing we'll do is enter numbers
                 layer_on(LAYER_KB_FKEYS); // This is also the number pad layer...
                 update_status_bar();
             } else {
-                return false; // Don't want QMK processing the release of these buttons
+                return true; // Let QMK handle the rest
             }
             break;
         case MULT(2): // Calc dot or comma
@@ -261,7 +216,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 if (record->tap.count) { // TAP
                     keycode = CK_DOT;
                 } else {                // HOLD
-                   keycode = CK_COMM;
+                    keycode = CK_COMM;
                 }
             } else {
                 return false; // Don't want QMK processing the release of these buttons
@@ -272,7 +227,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 if (record->tap.count) { // TAP
                     tap_code(KC_DOT);
                 } else {                // HOLD
-                   tap_code(KC_COMMA);
+                    tap_code(KC_COMMA);
                 }
             } else {
                 return false; // Don't want QMK processing the release of these buttons
@@ -283,7 +238,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 if (record->tap.count) { // TAP
                     keycode = CK_PLS;
                 } else {                // HOLD
-                   tap_code(KC_SPC);
+                    tap_code(KC_SPC);
                 }
             } else {
                 return false; // Don't want QMK processing the release of these buttons
@@ -495,13 +450,6 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 		        	input_count = 0 ;
                 }
                 break;
-            case CK_LTOG:
-                if (++layer_point >= sizeof(layer_cycle)) {
-                    layer_point = 0;
-                }
-                layer_move(layer_cycle[layer_point]);
-                update_status_bar();
-                break; 
             case CK_ORX:
                 send_string("x ");
                 break;
@@ -513,6 +461,24 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 // Turn on the numpad as the next thing we'll do is enter numbers
                 layer_on(LAYER_KB_FKEYS); // This is also the number pad layer...
                 update_status_bar();
+                break;
+            case CL_KB: // Custom layer toggle functions so we don't mess with the temp layer
+                layer_off(LAYER_ORCAD);
+                layer_off(LAYER_KB_FKEYS);
+                layer_off(LAYER_CALC);
+                layer_off(LAYER_CALC2);
+                break;
+            case CL_ORC:
+                layer_on(LAYER_ORCAD);
+                layer_off(LAYER_KB_FKEYS);
+                layer_off(LAYER_CALC);
+                layer_off(LAYER_CALC2);
+                break;
+            case CL_CALC:
+                layer_off(LAYER_ORCAD);
+                layer_off(LAYER_KB_FKEYS);
+                layer_on(LAYER_CALC);
+                layer_off(LAYER_CALC2);
                 break;
     		default:
 	    		return true ; // Process all other keycodes normally

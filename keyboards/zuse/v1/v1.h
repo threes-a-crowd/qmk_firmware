@@ -18,8 +18,8 @@
 // Define this here as we use them to update the display
 enum layers {
     LAYER_KB,
-    LAYER_KB_FKEYS,
     LAYER_ORCAD,
+    LAYER_KB_FKEYS,
     LAYER_CALC,
     LAYER_CALC2,
     LAYER_SWITCH
@@ -78,5 +78,7 @@ enum my_keycodes
     CK_ORX,
     CK_ORIX,
     CK_ORIY,
-    CK_LTOG
+    CL_KB,
+    CL_ORC,
+    CL_CALC
 };
