@@ -198,17 +198,25 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             }
             break;
         case KC_X: // OrCAD 'x ' or 'ix '
-            if ((record->event.pressed) && IS_LAYER_ON(LAYER_ORCAD)) {
-                if (record->tap.count) { // TAP
-                    keycode = CK_ORX;
-                } else {                // HOLD
-                    keycode = CK_ORIX;
+            if (IS_LAYER_ON(LAYER_ORCAD)) {
+                if (get_mods() & MOD_MASK_CTRL) {
+                    return true; // Just let QMK deal with it if we're holding Ctrl in OrCAD mode
+                } else { // OrCAD mode does its own thing
+                    if (record->event.pressed) {
+                        if (record->tap.count) { // TAP
+                            keycode = CK_ORX;
+                        } else {                // HOLD
+                            keycode = CK_ORIX;
+                        }
+                        // Turn on the numpad as the next thing we'll do is enter numbers
+                        layer_on(LAYER_KB_FKEYS); // This is also the number pad layer...
+                        update_status_bar();
+                    } else {
+                        return false; // Don't want QMK processing the release of these buttons
+                    }
                 }
-                // Turn on the numpad as the next thing we'll do is enter numbers
-                layer_on(LAYER_KB_FKEYS); // This is also the number pad layer...
-                update_status_bar();
-            } else {
-                return true; // Let QMK handle the rest
+            } else { // Any other situation is just a normal button press
+                return true; // Let QMK handle this as a normal 'x'
             }
             break;
         case MULT(2): // Calc dot or comma
@@ -255,7 +263,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 return false; // Don't want QMK processing the release of these buttons
             }
             break;
-        case LT(1,KC_ENT): // OrCAD enter
+        case LT(2,KC_ENT): // OrCAD enter
             if (record->event.pressed) {
                 if (record->tap.count) { // TAP
                     layer_off(LAYER_KB_FKEYS);
