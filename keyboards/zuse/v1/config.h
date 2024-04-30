@@ -48,6 +48,7 @@
 //#undef SPLIT_USB_DETECT
 #define SPLIT_USB_TIMEOUT 3000
 #define SPLIT_USB_TIMEOUT_POLL 10
+// See if we can get away without these, as they cause display flash every 5s when PC off
 #define SPLIT_WATCHDOG_ENABLE
 #define SPLIT_WATCHDOG_TIMEOUT 5000
 #define SERIAL_USART_FULL_DUPLEX
