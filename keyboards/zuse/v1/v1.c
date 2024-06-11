@@ -26,6 +26,7 @@ static const char *text_num = " NUM " ;
 static const char *text_angle_0 = " DEG " ;
 static const char *text_angle_1 = " RAD " ;
 static const char *text_angle_2 = " GRA " ;
+static const char *text_inv = " INV " ;
 
 void update_status_bar(void) {
     // Get curernt status
@@ -34,13 +35,19 @@ void update_status_bar(void) {
     bool isCaps = host_keyboard_led_state().caps_lock ;
     if (status_font != NULL) {
         // KB is default layer, so only identifying this one if we're at the base level (it's always on....)
-       qp_drawtext_recolor(display, 0, 0, status_font, text_mode_0, 0, 0, isKb ? 0 : 255, 0, 0, isKb ? 255 : 0) ; 
-       qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0), 0, status_font, text_mode_1, 0, 0, IS_LAYER_ON(LAYER_ORCAD) ? 0 : 255, 0, 0, IS_LAYER_ON(LAYER_ORCAD) ? 255 : 0) ; 
-       qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0)+qp_textwidth(status_font, text_mode_1), 0, status_font, text_mode_2, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 1 : 255, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 255 : 0) ; 
+        qp_drawtext_recolor(display, 0, 0, status_font, text_mode_0, 0, 0, isKb ? 0 : 255, 0, 0, isKb ? 255 : 0) ; 
+        qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0), 0, status_font, text_mode_1, 0, 0, IS_LAYER_ON(LAYER_ORCAD) ? 0 : 255, 0, 0, IS_LAYER_ON(LAYER_ORCAD) ? 255 : 0) ; 
+        qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0)+qp_textwidth(status_font, text_mode_1), 0, status_font, text_mode_2, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 1 : 255, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 255 : 0) ; 
         if (isCaps) {
            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps), 0, status_font, text_caps, 0, 0, 0, 0, 0, 255) ; 
         } else {
            qp_rect(display, 256 - qp_textwidth(status_font, text_caps), 0, 255,  status_font->line_height-1, 0, 0, 0, true) ; 
+        }
+
+        if (IS_LAYER_ON(LAYER_CALC2)) {
+            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_inv), 0, status_font, text_inv, 0, 0, 0, 0, 0, 255) ;
+        } else {
+            qp_rect(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_inv), 0, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - 1,  status_font->line_height-1, 0, 0, 0, true) ; 
         }
 
         switch (te_get_angle_units()) {
@@ -236,6 +243,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 } else {                // HOLD
                     tap_code(KC_COMMA);
                 }
+                return false; // Don't want QMK processing this as a layer swap as well as the taps
             } else {
                 return false; // Don't want QMK processing the release of these buttons
             }
