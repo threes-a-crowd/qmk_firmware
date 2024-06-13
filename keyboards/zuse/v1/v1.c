@@ -44,12 +44,6 @@ void update_status_bar(void) {
            qp_rect(display, 256 - qp_textwidth(status_font, text_caps), 0, 255,  status_font->line_height-1, 0, 0, 0, true) ; 
         }
 
-        if (IS_LAYER_ON(LAYER_CALC2)) {
-            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_inv), 0, status_font, text_inv, 0, 0, 0, 0, 0, 255) ;
-        } else {
-            qp_rect(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_inv), 0, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - 1,  status_font->line_height-1, 0, 0, 0, true) ; 
-        }
-
         switch (te_get_angle_units()) {
             case TE_DEGREES:
                 qp_drawtext(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0), 0, status_font, text_angle_0) ;
@@ -64,7 +58,19 @@ void update_status_bar(void) {
                 break ;
         }
         
-       qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num),0, status_font, text_num, 0, 0, IS_LAYER_ON(LAYER_KB_FKEYS) ? 1 : 255, 0, 0, IS_LAYER_ON(LAYER_KB_FKEYS) ? 255 : 0) ; 
+//       qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num),0, status_font, text_num, 0, 0, IS_LAYER_ON(LAYER_KB_FKEYS) ? 1 : 255, 0, 0, IS_LAYER_ON(LAYER_KB_FKEYS) ? 255 : 0) ; 
+
+        if (IS_LAYER_ON(LAYER_KB_FKEYS)) {
+            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num), 0, status_font, text_num, 0, 0, 0, 0, 0, 255) ;
+        } else {
+            qp_rect(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num), 0, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - 1,  status_font->line_height-1, 0, 0, 0, true) ; 
+        }
+
+        if (IS_LAYER_ON(LAYER_CALC2)) {
+            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num)- qp_textwidth(status_font, text_inv), 0, status_font, text_inv, 0, 0, 0, 0, 0, 255) ;
+        } else {
+            qp_rect(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num) - qp_textwidth(status_font, text_inv), 0, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num) - 1,  status_font->line_height-1, 0, 0, 0, true) ; 
+        }
 
         // Blank the extra height of the highlighting since we're not using any dangling characters
         qp_rect(display, 0, status_font->line_height - 2, 255, status_font->line_height-1, 0, 0, 0, true) ;
@@ -259,12 +265,14 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 return false; // Don't want QMK processing the release of these buttons
             }
             break;
-        case MULT(5): // Calc Pi or Ans
+        case MULT(5): // Calc AC or return to KB...
             if (record->event.pressed) {
                 if (record->tap.count) { // TAP
-                    keycode = CK_PI;
+                    keycode = CK_AC;
                 } else {                // HOLD
-                    keycode = CK_ANS;
+                    layer_off(LAYER_CALC2);
+                    layer_off(LAYER_CALC);
+                    return false ;
                 }
             } else {
                 return false; // Don't want QMK processing the release of these buttons
@@ -355,6 +363,9 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 				write_char_to_buff('/') ;
 		    	break ;
             case CK_E:
+                write_str_to_buff("e^", 2);
+                break ;
+            case CK_10X:
     		    write_char_to_buff('E') ;
                 break ;
             case CK_BRKO:

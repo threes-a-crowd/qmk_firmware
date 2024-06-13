@@ -80,5 +80,6 @@ enum my_keycodes
     CK_ORIY,
     CL_KB,
     CL_ORC,
-    CL_CALC
+    CL_CALC,
+    CK_10X
 };
