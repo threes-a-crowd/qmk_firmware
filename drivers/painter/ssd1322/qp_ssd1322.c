@@ -85,7 +85,7 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
         SSD1322_CONTRASTMASTER,        5,  1, 0xFF,
         SSD1322_PRECHARGE2,            5,  1, 0x08,
         SSD1322_SETREMAP,              5,  2, madctl[rotation], 0x11,
-        SSD1322_DISPLAYON,             5,  0,
+//        SSD1322_DISPLAYON,             5,  0,  // ATTEMPT TO REMOVE THIS DISPLAY ON, SO WE DON'T TURN IT ON UNTIL WE'RE READY...
     };
     // clang-format on
     qp_comms_bulk_command_sequence(device, ssd1322_init_sequence, sizeof(ssd1322_init_sequence));

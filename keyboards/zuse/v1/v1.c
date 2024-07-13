@@ -60,7 +60,7 @@ void update_status_bar(void) {
         
 //       qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num),0, status_font, text_num, 0, 0, IS_LAYER_ON(LAYER_KB_FKEYS) ? 1 : 255, 0, 0, IS_LAYER_ON(LAYER_KB_FKEYS) ? 255 : 0) ; 
 
-        if (IS_LAYER_ON(LAYER_KB_FKEYS)) {
+        if (IS_LAYER_ON(LAYER_KB_FKEYS) || IS_LAYER_ON(LAYER_SWITCH)) {
             qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num), 0, status_font, text_num, 0, 0, 0, 0, 0, 255) ;
         } else {
             qp_rect(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num), 0, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - 1,  status_font->line_height-1, 0, 0, 0, true) ; 
@@ -95,6 +95,7 @@ void update_calc_disp(void) {
         qp_rect(display, 0, 64-(result_font->line_height), 255, 63, 0, 0, 0, true);
         qp_drawtext(display, 256-qp_textwidth(result_font, display_result), 64-result_font->line_height, result_font, display_result);
     }
+    update_status_bar();
     qp_flush(display);
 }
 
@@ -272,8 +273,33 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 } else {                // HOLD
                     layer_off(LAYER_CALC2);
                     layer_off(LAYER_CALC);
+                    update_status_bar();
                     return false ;
                 }
+            } else {
+                return false; // Don't want QMK processing the release of these buttons
+            }
+            break;
+        case MULT(6): // Numpad  plus or space
+            if (record->event.pressed) {
+                if (record->tap.count) { // TAP
+                    tap_code(KC_PPLS);
+                } else {                // HOLD
+                    tap_code(KC_SPC);
+                }
+                return false; // Don't want QMK processing this as a layer swap as well as the taps
+            } else {
+                return false; // Don't want QMK processing the release of these buttons
+            }
+            break;
+        case MULT(7): // Numpad  plus or space (OrCAD - Swap to use SPACE as default!)
+            if (record->event.pressed) {
+                if (record->tap.count) { // TAP
+                    tap_code(KC_SPC);
+                } else {                // HOLD
+                    tap_code(KC_PPLS);
+                }
+                return false; // Don't want QMK processing this as a layer swap as well as the taps
             } else {
                 return false; // Don't want QMK processing the release of these buttons
             }

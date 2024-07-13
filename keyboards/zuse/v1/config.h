@@ -81,7 +81,7 @@
 #endif
 
 // Set delay for tap/hold
-#define TAPPING_TERM 200
+#define TAPPING_TERM 150
 
 #define TE_SUPPORT_ANGLE_CONVERSION
 
