@@ -8,6 +8,7 @@ QUANTUM_PAINTER_DRIVERS += ssd1322_spi
 #CONSOLE_ENABLE = yes
 DYNAMIC_TAPPING_TERM_ENABLE = yes
 DYNAMIC_MACRO_ENABLE = yes
+TAP_DANCE_ENABLE = yes
 SRC += tinyexpr.c
 SRC += noto_sans_10.qff.c
 SRC += noto_sans_18.qff.c

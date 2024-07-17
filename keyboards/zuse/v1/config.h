@@ -82,6 +82,7 @@
 
 // Set delay for tap/hold
 #define TAPPING_TERM 125
+#define TAPPING_TERM_PER_KEY
 
 #define TE_SUPPORT_ANGLE_CONVERSION
 

@@ -10,6 +10,33 @@
 static uint8_t m1_len = 0;
 static uint8_t m2_len = 0;
 
+typedef enum {
+    TD_NONE,
+    TD_UNKNOWN,
+    TD_SINGLE_TAP,
+    TD_SINGLE_HOLD,
+    TD_DOUBLE_TAP
+} td_state_t;
+
+typedef struct {
+    bool is_press_action;
+    td_state_t state;
+} td_tap_t;
+
+enum {
+    CAPS_CALC,  // Our custom tap dance key; add any other tap dance keys to this enum 
+};
+
+// Declare the functions to be used with your tap dance key(s)
+
+// Function associated with all tap dances
+td_state_t cur_dance(tap_dance_state_t *state);
+
+// Functions associated with individual tap dances
+void caps_calc_finished(tap_dance_state_t *state, void *user_data);
+void caps_calc_reset(tap_dance_state_t *state, void *user_data);
+
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
      *  ┌───┐                                                                         ┌───┐
@@ -47,7 +74,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_ESC ,                                                                                                                                                            KC_DEL ,
         KC_F9  ,    KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   , KC_MINS,                        KC_EQL , KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,    KC_HOME,
         KC_F10 ,    KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   , KC_LBRC,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_NUHS,    KC_PGUP,
-        KC_F11 ,    LT(5,KC_CAPS), KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_LPRN,                  KC_RPRN, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_QUOT,    KC_PGDN,
+        KC_F11 ,    TD(CAPS_CALC), KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_LPRN,                  KC_RPRN, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_QUOT,    KC_PGDN,
         KC_F12 ,    LSFT_T(KC_NUBS), KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_SPC ,                        KC_UP  , KC_B   , KC_N   , KC_M   , KC_COMM, KC_DOT , RSFT_T(KC_SLSH),    KC_END ,
                     KC_LCTL, KC_LGUI, KC_LALT,     KC_LSFT,      LT(1,KC_DEL) , XXXXXXX, LT(2,KC_ENT), KC_LEFT, KC_DOWN, KC_RGHT,      KC_RSFT,     KC_RALT, MO(5)  , KC_RCTL
     ),
@@ -176,4 +203,68 @@ void dynamic_macro_record_end_user(int8_t direction) {
 
     update_status_bar();
     qp_flush(display);
+}
+
+
+// Determine the current tap dance state
+td_state_t cur_dance(tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (!state->pressed) return TD_SINGLE_TAP;
+        else return TD_SINGLE_HOLD;
+    } else if (state->count == 2) return TD_DOUBLE_TAP;
+    else return TD_UNKNOWN;
+}
+
+// Initialize tap structure associated with example tap dance key
+static td_tap_t caps_calc_tap_state = {
+    .is_press_action = true,
+    .state = TD_NONE
+};
+
+// Functions that control what our tap dance key does
+void caps_calc_finished(tap_dance_state_t *state, void *user_data) {
+    caps_calc_tap_state.state = cur_dance(state);
+    switch (caps_calc_tap_state.state) {
+        case TD_SINGLE_TAP:
+            tap_code(KC_CAPS);
+            break;
+        case TD_SINGLE_HOLD:
+            layer_on(LAYER_CALC);
+            break;
+        case TD_DOUBLE_TAP:
+            // Check to see if the layer is already set
+            if (layer_state_is(LAYER_CALC)) {
+                // If already set, then switch it off
+                layer_off(LAYER_CALC);
+            } else {
+                // If not already set, then switch the layer on
+                layer_on(LAYER_CALC);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void caps_calc_reset(tap_dance_state_t *state, void *user_data) {
+    // If the key was held down and now is released then switch off the layer
+    if (caps_calc_tap_state.state == TD_SINGLE_HOLD) {
+        layer_off(LAYER_CALC);
+    }
+    caps_calc_tap_state.state = TD_NONE;
+}
+
+// Associate our tap dance key with its functionality
+tap_dance_action_t tap_dance_actions[] = {
+    [CAPS_CALC] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, caps_calc_finished, caps_calc_reset)
+};
+
+// Set a long-ish tapping term for tap-dance keys
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case QK_TAP_DANCE ... QK_TAP_DANCE_MAX:
+            return 250;
+        default:
+            return TAPPING_TERM;
+    }
 }
