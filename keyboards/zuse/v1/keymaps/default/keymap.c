@@ -7,6 +7,9 @@
 #include "keymap_uk.h"
 #include "sendstring_uk.h"
 
+static uint8_t m1_len = 0;
+static uint8_t m2_len = 0;
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
      *  ┌───┐                                                                         ┌───┐
@@ -104,3 +107,73 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true ;
 } 
+
+// Handle dynamic macro recording... see process_dynamic_macro.h/.c for more info
+void dynamic_macro_record_start_user(int8_t direction) {
+    // Macro recording started
+
+    if (expr_font != NULL) { 
+        // Clear This part of the display
+        qp_rect(display, 0, status_font->line_height+4, 255, status_font->line_height+4+expr_font->line_height-1, 0, 0, 0, true);
+
+        // -----------------------
+        // __M1_[128]___M2_[001]__
+        uint8_t char_width = qp_textwidth(expr_font, " ") ;
+
+        if (direction == 1) {
+            qp_drawtext_recolor(display, 2*char_width, status_font->line_height+4, expr_font, "M1", 0, 0, 0, 0, 0, 255);
+            m1_len = 0;
+        }
+        if (direction == -1) {
+            qp_drawtext_recolor(display, 13*char_width, status_font->line_height+4, expr_font, "M2", 0, 0, 0, 0, 0, 255);
+            m2_len = 0;
+        }
+
+    }
+
+    update_status_bar();
+    qp_flush(display);
+}
+
+void dynamic_macro_play_user(int8_t direction) {
+    // Macro playback
+}
+
+void dynamic_macro_record_key_user(int8_t direction, keyrecord_t *record) {
+    // Key added to macro
+    if (direction == 1) {
+        m1_len++;
+    }
+
+    if (direction == -1) {
+        m2_len++;
+    }
+}
+
+void dynamic_macro_record_end_user(int8_t direction) {
+    // Macro recording stopped
+    // Just update all of the display...
+    if (expr_font != NULL) { 
+        // Clear This part of the display
+        qp_rect(display, 0, status_font->line_height+4, 255, status_font->line_height+4+expr_font->line_height-1, 0, 0, 0, true);
+
+        // -----------------------
+        // __M1_[128]___M2_[001]__
+        uint8_t char_width = qp_textwidth(expr_font, " ") ;
+        char tmp_len[5] ;
+
+        if (m1_len > 0) {
+            qp_drawtext(display, 2*char_width, status_font->line_height+4, expr_font, "M1 [");
+            sprintf(tmp_len, "%3d]", m1_len);
+            qp_drawtext(display, 6*char_width, status_font->line_height+4, expr_font, tmp_len);
+        }
+        if (m2_len > 0) {
+            qp_drawtext(display, 13*char_width, status_font->line_height+4, expr_font, "M2 [");
+            sprintf(tmp_len, "%3d]", m2_len);
+            qp_drawtext(display, 17*char_width, status_font->line_height+4, expr_font, tmp_len);
+        }
+    }
+
+    update_status_bar();
+    qp_flush(display);
+}

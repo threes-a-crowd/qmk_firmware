@@ -83,3 +83,8 @@ enum my_keycodes
     CL_CALC,
     CK_10X
 };
+
+static painter_device_t display;
+static painter_font_handle_t expr_font;
+static painter_font_handle_t status_font;
+extern void update_status_bar(void);

@@ -13,9 +13,9 @@ static char display_result[19];
 static bool all_clear = true ;
 static double result = 0 ;
 
-static painter_device_t display;
-static painter_font_handle_t status_font;
-static painter_font_handle_t expr_font;
+//static painter_device_t display;
+//static painter_font_handle_t status_font;
+//static painter_font_handle_t expr_font;
 static painter_font_handle_t result_font;
 
 static const char *text_mode_0 = " KB " ;
@@ -28,6 +28,11 @@ static const char *text_angle_1 = " RAD " ;
 static const char *text_angle_2 = " GRA " ;
 static const char *text_inv = " INV " ;
 
+// Current Status Bar Layout (Size 10, 42 chars max)
+// ---------=---------=---------=---------=--
+// _KB__ORCAD__CALC_    _INV__NUM__DEG__CAPS_
+// NOT CURRENTLY ENOUGH ROOM FOR THIS: _M1__M2_
+
 void update_status_bar(void) {
     // Get curernt status
     bool isKb = IS_LAYER_OFF(LAYER_ORCAD) & IS_LAYER_OFF(LAYER_CALC) ;
@@ -37,7 +42,7 @@ void update_status_bar(void) {
         // KB is default layer, so only identifying this one if we're at the base level (it's always on....)
         qp_drawtext_recolor(display, 0, 0, status_font, text_mode_0, 0, 0, isKb ? 0 : 255, 0, 0, isKb ? 255 : 0) ; 
         qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0), 0, status_font, text_mode_1, 0, 0, IS_LAYER_ON(LAYER_ORCAD) ? 0 : 255, 0, 0, IS_LAYER_ON(LAYER_ORCAD) ? 255 : 0) ; 
-        qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0)+qp_textwidth(status_font, text_mode_1), 0, status_font, text_mode_2, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 1 : 255, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 255 : 0) ; 
+        qp_drawtext_recolor(display, qp_textwidth(status_font, text_mode_0)+qp_textwidth(status_font, text_mode_1), 0, status_font, text_mode_2, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 0 : 255, 0, 0, IS_LAYER_ON(LAYER_CALC) ? 255 : 0) ; 
         if (isCaps) {
            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps), 0, status_font, text_caps, 0, 0, 0, 0, 0, 255) ; 
         } else {
@@ -112,6 +117,8 @@ void keyboard_post_init_kb(void) {
     status_font = qp_load_font_mem(font_noto_sans_10);
     expr_font = qp_load_font_mem(font_noto_sans_18);
     result_font = qp_load_font_mem(font_noto_sans_bold_24);
+
+    qp_power(display, false) ; // Set the display to be off to begin with, to avoid having to wait the initial timeout to realise its not on..
     
 // DEBUG / TEST CODE ONLY!
     if (expr_font != NULL) {
@@ -132,6 +139,11 @@ bool led_update_kb(led_t led_state) {
 
 layer_state_t layer_state_set_kb(layer_state_t state) {
     update_status_bar();
+
+    if (IS_LAYER_OFF(LAYER_CALC) && IS_LAYER_OFF(LAYER_CALC2)) {
+        dynamic_macro_record_end_user(0); // Use this to update the display?
+    }
+
     return state;
 }
 
