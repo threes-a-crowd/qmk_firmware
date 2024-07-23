@@ -158,7 +158,6 @@ void dynamic_macro_record_start_user(int8_t direction) {
 
     }
 
-    update_status_bar();
     qp_flush(display);
 }
 
@@ -187,21 +186,18 @@ void dynamic_macro_record_end_user(int8_t direction) {
         // -----------------------
         // __M1_[128]___M2_[001]__
         uint8_t char_width = qp_textwidth(expr_font, " ") ;
-        char tmp_len[5] ;
+        char tmp_len[15] ;
 
         if (m1_len > 0) {
-            qp_drawtext(display, 2*char_width, status_font->line_height+4, expr_font, "M1 [");
-            sprintf(tmp_len, "%3d]", m1_len);
-            qp_drawtext(display, 6*char_width, status_font->line_height+4, expr_font, tmp_len);
+            sprintf(tmp_len, "M1 [%3d]", m1_len);
+            qp_drawtext(display, 2*char_width, status_font->line_height+4, expr_font, tmp_len);
         }
         if (m2_len > 0) {
-            qp_drawtext(display, 13*char_width, status_font->line_height+4, expr_font, "M2 [");
-            sprintf(tmp_len, "%3d]", m2_len);
-            qp_drawtext(display, 17*char_width, status_font->line_height+4, expr_font, tmp_len);
+            sprintf(tmp_len, "M2 [%3d]", m2_len);
+            qp_drawtext(display, 13*char_width, status_font->line_height+4, expr_font, tmp_len);
         }
     }
 
-    update_status_bar();
     qp_flush(display);
 }
 
@@ -244,6 +240,7 @@ void caps_calc_finished(tap_dance_state_t *state, void *user_data) {
         default:
             break;
     }
+    update_status_bar();
 }
 
 void caps_calc_reset(tap_dance_state_t *state, void *user_data) {
@@ -252,6 +249,7 @@ void caps_calc_reset(tap_dance_state_t *state, void *user_data) {
         layer_off(LAYER_CALC);
     }
     caps_calc_tap_state.state = TD_NONE;
+    update_status_bar();
 }
 
 // Associate our tap dance key with its functionality

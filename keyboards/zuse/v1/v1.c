@@ -79,9 +79,8 @@ void update_status_bar(void) {
 
         // Blank the extra height of the highlighting since we're not using any dangling characters
         qp_rect(display, 0, status_font->line_height - 2, 255, status_font->line_height-1, 0, 0, 0, true) ;
-
-        qp_flush(display) ;
     }
+    qp_flush(display) ;
 }
 
 void update_calc_disp(void) {
@@ -100,8 +99,8 @@ void update_calc_disp(void) {
         qp_rect(display, 0, 64-(result_font->line_height), 255, 63, 0, 0, 0, true);
         qp_drawtext(display, 256-qp_textwidth(result_font, display_result), 64-result_font->line_height, result_font, display_result);
     }
-    update_status_bar();
-    qp_flush(display);
+    qp_flush(display) ; // Flush first to be sure we don't over-fill buffer....
+    update_status_bar(); 
 }
 
 void keyboard_post_init_kb(void) {
@@ -119,6 +118,7 @@ void keyboard_post_init_kb(void) {
     result_font = qp_load_font_mem(font_noto_sans_bold_24);
 
     qp_power(display, false) ; // Set the display to be off to begin with, to avoid having to wait the initial timeout to realise its not on..
+    set_activity_timestamps(0, 0, 0);   //  Attempt to bypass the initial timeout...
     
 // DEBUG / TEST CODE ONLY!
     if (expr_font != NULL) {
