@@ -25,6 +25,7 @@ typedef struct {
 
 enum {
     CAPS_CALC,  // Our custom tap dance key; add any other tap dance keys to this enum 
+    NLOCK
 };
 
 // Declare the functions to be used with your tap dance key(s)
@@ -35,6 +36,8 @@ td_state_t cur_dance(tap_dance_state_t *state);
 // Functions associated with individual tap dances
 void caps_calc_finished(tap_dance_state_t *state, void *user_data);
 void caps_calc_reset(tap_dance_state_t *state, void *user_data);
+void nlock_finished(tap_dance_state_t *state, void *user_data);
+void nlock_reset(tap_dance_state_t *state, void *user_data);
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -76,7 +79,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_F10 ,    KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   , KC_LBRC,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_NUHS,    KC_PGUP,
         KC_F11 ,    TD(CAPS_CALC), KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_LPRN,                  KC_RPRN, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_QUOT,    KC_PGDN,
         KC_F12 ,    LSFT_T(KC_NUBS), KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_SPC ,                        KC_UP  , KC_B   , KC_N   , KC_M   , KC_COMM, KC_DOT , RSFT_T(KC_SLSH),    KC_END ,
-                    KC_LCTL, KC_LGUI, KC_LALT,     KC_LSFT,      LT(1,KC_DEL) , XXXXXXX, LT(2,KC_ENT), KC_LEFT, KC_DOWN, KC_RGHT,      KC_RSFT,     KC_RALT, MO(5)  , KC_RCTL
+                    KC_LCTL, KC_LGUI, KC_LALT,     KC_LSFT,      LT(1,KC_DEL) , XXXXXXX, LT(2,KC_ENT), KC_LEFT, KC_DOWN, KC_RGHT,      KC_RSFT,     KC_RALT, TD(NLOCK) , KC_RCTL
     ),
     [LAYER_ORCAD] = LAYOUT_8x5_offset(
         _______,                                                                                                                                                            _______,
@@ -179,7 +182,16 @@ void dynamic_macro_record_key_user(int8_t direction, keyrecord_t *record) {
 void dynamic_macro_record_end_user(int8_t direction) {
     // Macro recording stopped
     // Just update all of the display...
-    if (expr_font != NULL) { 
+
+    // TEST CODE! - Just draw SOMETHING to see if we're ever getting here - and also check if we see the font here
+    qp_rect(display, 0, 20, 255, 25, 0, 0, 64, true) ;
+    if (expr_font != NULL) {
+        qp_rect(display, 0, 26, 255, 30, 0, 0, 255, true) ;
+    }
+    qp_flush(display) ;
+    
+    // DISABLE THIS FOR NOW.....
+    if (0 && expr_font != NULL) { 
         // Clear This part of the display
         qp_rect(display, 0, status_font->line_height+4, 255, status_font->line_height+4+expr_font->line_height-1, 0, 0, 0, true);
 
@@ -252,9 +264,49 @@ void caps_calc_reset(tap_dance_state_t *state, void *user_data) {
     update_status_bar();
 }
 
+// Initialize tap structure associated with example tap dance key
+static td_tap_t nlock_tap_state = {
+    .is_press_action = true,
+    .state = TD_NONE
+};
+
+void nlock_finished(tap_dance_state_t *state, void *user_data) {
+    nlock_tap_state.state = cur_dance(state);
+    switch (nlock_tap_state.state) {
+        case TD_SINGLE_TAP:
+            break;
+        case TD_SINGLE_HOLD:
+            layer_on(LAYER_SWITCH);
+            break;
+        case TD_DOUBLE_TAP:
+            // Check to see if the layer is already set
+            if (layer_state_is(LAYER_SWITCH)) {
+                // If already set, then switch it off
+                layer_off(LAYER_SWITCH);
+            } else {
+                // If not already set, then switch the layer on
+                layer_on(LAYER_SWITCH);
+            }
+            break;
+        default:
+            break;
+    }
+    update_status_bar();
+}
+
+void nlock_reset(tap_dance_state_t *state, void *user_data) {
+    // If the key was held down and now is released then switch off the layer
+    if (nlock_tap_state.state == TD_SINGLE_HOLD) {
+        layer_off(LAYER_SWITCH);
+    }
+    nlock_tap_state.state = TD_NONE;
+    update_status_bar();
+}
+
 // Associate our tap dance key with its functionality
 tap_dance_action_t tap_dance_actions[] = {
-    [CAPS_CALC] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, caps_calc_finished, caps_calc_reset)
+    [CAPS_CALC] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, caps_calc_finished, caps_calc_reset),
+    [NLOCK] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, nlock_finished, nlock_reset)
 };
 
 // Set a long-ish tapping term for tap-dance keys
