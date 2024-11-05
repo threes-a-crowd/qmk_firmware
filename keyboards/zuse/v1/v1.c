@@ -527,22 +527,22 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 update_status_bar();
                 break;
             case CL_KB: // Custom layer toggle functions so we don't mess with the temp layer
-                layer_off(LAYER_ORCAD);
-                layer_off(LAYER_KB_FKEYS);
-                layer_off(LAYER_CALC);
-                layer_off(LAYER_CALC2);
+                //layer_off(LAYER_ORCAD);
+                //layer_off(LAYER_KB_FKEYS);
+                //layer_off(LAYER_CALC);
+                //layer_off(LAYER_CALC2);
                 break;
             case CL_ORC:
-                layer_on(LAYER_ORCAD);
-                layer_off(LAYER_KB_FKEYS);
-                layer_off(LAYER_CALC);
-                layer_off(LAYER_CALC2);
+                //layer_on(LAYER_ORCAD);
+                //layer_off(LAYER_KB_FKEYS);
+                //layer_off(LAYER_CALC);
+                //layer_off(LAYER_CALC2);
                 break;
             case CL_CALC:
-                layer_on(LAYER_CALC);
-                layer_off(LAYER_ORCAD);
-                layer_off(LAYER_KB_FKEYS);
-                layer_off(LAYER_CALC2);
+                //layer_on(LAYER_CALC);
+                //layer_off(LAYER_ORCAD);
+                //layer_off(LAYER_KB_FKEYS);
+                //layer_off(LAYER_CALC2);
                 break;
     		default:
 	    		return true ; // Process all other keycodes normally

@@ -82,7 +82,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                     KC_LCTL, KC_LGUI, KC_LALT,     KC_LSFT,      LT(1,KC_DEL) , XXXXXXX, LT(2,KC_ENT), KC_LEFT, KC_DOWN, KC_RGHT,      KC_RSFT,     KC_RALT, TD(NLOCK) , KC_RCTL
     ),
     [LAYER_ORCAD] = LAYOUT_8x5_offset(
-        _______,                                                                                                                                                            _______,
+        QK_BOOT,                                                                                                                                                            _______,
         _______,    LCTL(KC_L), DM_REC1, DM_REC2, _______, _______, _______, KC_BSPC,                     _______, _______, _______, _______, _______, _______, _______,    _______,
         _______,    _______, KC_I   , _______, _______, _______, _______, KC_F8  ,                        _______, _______, _______, _______, _______, _______, _______,    _______,
         _______,    _______, KC_O   , _______, _______, _______, _______, KC_F7  ,                        _______, _______, _______, _______, _______, _______, _______,    _______,
@@ -244,6 +244,7 @@ void caps_calc_finished(tap_dance_state_t *state, void *user_data) {
             if (layer_state_is(LAYER_CALC)) {
                 // If already set, then switch it off
                 layer_off(LAYER_CALC);
+                layer_off(LAYER_CALC2); // Also turn off INV layer if it's in use
             } else {
                 // If not already set, then switch the layer on
                 layer_on(LAYER_CALC);
@@ -259,6 +260,7 @@ void caps_calc_reset(tap_dance_state_t *state, void *user_data) {
     // If the key was held down and now is released then switch off the layer
     if (caps_calc_tap_state.state == TD_SINGLE_HOLD) {
         layer_off(LAYER_CALC);
+        layer_off(LAYER_CALC2); // Also turn off INV layer if it's in use
     }
     caps_calc_tap_state.state = TD_NONE;
     update_status_bar();
