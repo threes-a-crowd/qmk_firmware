@@ -27,10 +27,11 @@ static const char *text_angle_0 = " DEG " ;
 static const char *text_angle_1 = " RAD " ;
 static const char *text_angle_2 = " GRA " ;
 static const char *text_inv = " INV " ;
+static const char *text_as_on = " AS " ;
 
 // Current Status Bar Layout (Size 10, 42 chars max)
 // ---------=---------=---------=---------=--
-// _KB__ORCAD__CALC_    _INV__NUM__DEG__CAPS_
+// _KB__ORCAD__CALC__AS__INV__NUM__DEG__CAPS_
 // NOT CURRENTLY ENOUGH ROOM FOR THIS: _M1__M2_
 
 void update_status_bar(void) {
@@ -80,6 +81,15 @@ void update_status_bar(void) {
         // Blank the extra height of the highlighting since we're not using any dangling characters
         qp_rect(display, 0, status_font->line_height - 2, 255, status_font->line_height-1, 0, 0, 0, true) ;
     }
+
+    // Display auto-shift status
+    bool isAsOn = get_autoshift_state();
+    if (isAsOn){
+            qp_drawtext_recolor(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num)- qp_textwidth(status_font, text_inv) - qp_textwidth(status_font, text_as_on), 0, status_font, text_as_on, 0, 0, 0, 0, 0, 255) ;
+        } else {
+            qp_rect(display, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num) - qp_textwidth(status_font, text_inv) - qp_textwidth(status_font, text_as_on), 0, 256 - qp_textwidth(status_font, text_caps) - qp_textwidth(status_font, text_angle_0) - qp_textwidth(status_font, text_num) - qp_textwidth(status_font, text_inv)- 1,  status_font->line_height-1, 0, 0, 0, true) ; 
+    }
+
     qp_flush(display) ;
 }
 
@@ -111,8 +121,12 @@ void keyboard_post_init_kb(void) {
     display = qp_ssd1322_make_spi_device(480, 128, OLED_CS_PIN, OLED_DC_PIN, OLED_RST_PIN, OLED_SPI_DIVISOR, 0);
 //    display = qp_ssd1322_make_spi_device(256, 64, OLED_CS_PIN, OLED_DC_PIN, OLED_RST_PIN, OLED_SPI_DIVISOR, 0);
 
-    qp_init(display, QP_ROTATION_0);
-    qp_set_viewport_offsets(display, 96, 0) ; // We're not using the full range of the controller
+// THIS IS FOR NORMAL SCREEN ORIENTATION
+    //qp_init(display, QP_ROTATION_0);
+    //qp_set_viewport_offsets(display, 96, 0) ; // We're not using the full range of the controller
+// THIS IS FOR FLIPPED SCREEN ROTATION
+    qp_init(display, QP_ROTATION_180);
+    qp_set_viewport_offsets(display, 128, 0) ; // We're not using the full range of the controller
     status_font = qp_load_font_mem(font_noto_sans_10);
     expr_font = qp_load_font_mem(font_noto_sans_18);
     result_font = qp_load_font_mem(font_noto_sans_bold_24);

@@ -48,7 +48,7 @@ __attribute__((weak)) bool qp_ssd1322_init(painter_device_t device, painter_rota
     const uint8_t madctl[] = {
         [QP_ROTATION_0]   = SSD1322_MADCTL_MY | SSD1322_MADCTL_MX | SSD1322_MADCTL_NIBBLE_REMAP,
         [QP_ROTATION_90]  = SSD1322_MADCTL_MX | SSD1322_MADCTL_MY | SSD1322_MADCTL_MV,
-        [QP_ROTATION_180] = SSD1322_MADCTL_MX,
+        [QP_ROTATION_180] = SSD1322_MADCTL_NIBBLE_REMAP, //SSD1322_MADCTL_MX,
         [QP_ROTATION_270] = SSD1322_MADCTL_MV,
     };
 
@@ -124,7 +124,9 @@ bool qp_ssd1322_flush(painter_device_t device) {
             qp_ssd1322_flush_rot90(device, &driver->oled.surface.dirty, driver->framebuffer);
             break;
         case QP_ROTATION_180:
-            qp_ssd1322_flush_rot180(device, &driver->oled.surface.dirty, driver->framebuffer);
+// JUST USE THE SAME ONE FOR NOW AND SEE IF THAT WORKS????
+            qp_ssd1322_flush_rot0(device, &driver->oled.surface.dirty, driver->framebuffer);
+//            qp_ssd1322_flush_rot180(device, &driver->oled.surface.dirty, driver->framebuffer);
             break;
         case QP_ROTATION_270:
             qp_ssd1322_flush_rot270(device, &driver->oled.surface.dirty, driver->framebuffer);

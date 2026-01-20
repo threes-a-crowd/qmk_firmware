@@ -81,7 +81,7 @@
 #endif
 
 // Set delay for tap/hold
-#define TAPPING_TERM 150
+#define TAPPING_TERM 115
 #define TAPPING_TERM_PER_KEY
 
 #define TE_SUPPORT_ANGLE_CONVERSION
@@ -89,3 +89,8 @@
 //#define DIP_SWITCH_PINS { GP1, GP2, GP3, GP6 }
 
 #define DYNAMIC_MACRO_DELAY 5 // Add a bit of delay for the dynamic macros
+
+
+// Set AutoShift Options
+#define AUTO_SHIFT_TIMEOUT 150
+#define NO_AUTO_SHIFT_SPECIAL
