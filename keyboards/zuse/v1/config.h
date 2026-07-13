@@ -92,5 +92,5 @@
 
 
 // Set AutoShift Options
-#define AUTO_SHIFT_TIMEOUT 150
+#define AUTO_SHIFT_TIMEOUT 125
 #define NO_AUTO_SHIFT_SPECIAL

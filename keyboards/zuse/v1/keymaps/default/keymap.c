@@ -6,6 +6,7 @@
 #include "v1.h"
 #include "keymap_uk.h"
 #include "sendstring_uk.h"
+#include "email_string.h"
 
 static uint8_t m1_len = 0;
 static uint8_t m2_len = 0;
@@ -25,7 +26,8 @@ typedef struct {
 
 enum {
     CAPS_CALC,  // Our custom tap dance key; add any other tap dance keys to this enum 
-    NLOCK
+    NLOCK,
+    TD_AT
 };
 
 // Declare the functions to be used with your tap dance key(s)
@@ -39,6 +41,7 @@ void caps_calc_reset(tap_dance_state_t *state, void *user_data);
 void nlock_finished(tap_dance_state_t *state, void *user_data);
 void nlock_reset(tap_dance_state_t *state, void *user_data);
 
+void at_finished(tap_dance_state_t *state, void *user_data);
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
@@ -77,7 +80,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_ESC ,                                                                                                                                                            KC_DEL ,
         KC_F9  ,    KC_GRV , KC_1   , KC_2   , KC_3   , KC_4   , KC_5   , KC_MINS,                        KC_EQL , KC_6   , KC_7   , KC_8   , KC_9   , KC_0   , KC_BSPC,    KC_HOME,
         KC_F10 ,    KC_TAB , KC_Q   , KC_W   , KC_E   , KC_R   , KC_T   , KC_LBRC,                        KC_RBRC, KC_Y   , KC_U   , KC_I   , KC_O   , KC_P   , KC_NUHS,    KC_PGUP,
-        KC_F11 ,    TD(CAPS_CALC), KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_LPRN,                  KC_RPRN, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, KC_QUOT,    KC_PGDN,
+        KC_F11 ,    TD(CAPS_CALC), KC_A   , KC_S   , KC_D   , KC_F   , KC_G   , KC_LPRN,                  KC_RPRN, KC_H   , KC_J   , KC_K   , KC_L   , KC_SCLN, TD(TD_AT),    KC_PGDN,
         KC_F12 ,    LSFT_T(KC_NUBS), KC_Z   , KC_X   , KC_C   , KC_V   , KC_B   , KC_SPC ,                        KC_UP  , KC_B   , KC_N   , KC_M   , KC_COMM, KC_DOT , RSFT_T(KC_SLSH),    KC_END ,
                     KC_LCTL, KC_LGUI, KC_LALT,     KC_LSFT,      LT(1,KC_DEL) , XXXXXXX, LT(2,KC_ENT), KC_LEFT, KC_DOWN, KC_RGHT,      KC_RSFT,     KC_RALT, TD(NLOCK) , KC_RCTL
     ),
@@ -305,9 +308,30 @@ void nlock_reset(tap_dance_state_t *state, void *user_data) {
     update_status_bar();
 }
 
-// Associate our tap dance key with its functionality
+// Initialize tap structure associated with example tap dance key
+static td_tap_t at_tap_state = {
+    .is_press_action = true,
+    .state = TD_NONE
+};
+
+void at_finished(tap_dance_state_t *state, void *user_data) {
+    at_tap_state.state = cur_dance(state);
+    switch (at_tap_state.state) {
+        case TD_SINGLE_TAP:
+            tap_code(KC_QUOT);
+            break;
+        case TD_DOUBLE_TAP:
+            // Write email address
+            SEND_STRING(EMAIL_STRING);
+            break;
+        default:
+            break;
+    }
+}
+
 tap_dance_action_t tap_dance_actions[] = {
     [CAPS_CALC] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, caps_calc_finished, caps_calc_reset),
+    [TD_AT] = ACTION_TAP_DANCE_FN(at_finished),
     [NLOCK] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, nlock_finished, nlock_reset)
 };
 
